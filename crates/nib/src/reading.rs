@@ -960,7 +960,7 @@ fn toggle_task(app: &Rc<App>, tab: &Rc<Tab>, reading: &Reading, at: i32, line: u
     let mut insert_at = buffer.iter_at_offset(at_source);
     buffer.insert(&mut insert_at, &edit.replacement);
     buffer.end_user_action();
-    editor::save(app, tab);
+    editor::save_if_modified(app, tab);
     // The reading view's glyph, in place: no full re-render.
     let rbuf = reading.view.buffer();
     let mut glyph_start = rbuf.iter_at_offset(at);
