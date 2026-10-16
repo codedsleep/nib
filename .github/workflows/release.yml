@@ -29,12 +29,16 @@ jobs:
           test "$GITHUB_REF_NAME" = "v$version"
           cargo fmt --all --check
           cargo clippy --locked --workspace --all-targets -- -D warnings
+          scripts/mkfixture.sh --seed 7
           cargo test --locked --workspace
           scripts/forbidden-deps.sh
+          python3 scripts/generate-docs.py --check
+          RUSTDOCFLAGS='-D warnings' cargo doc --locked --no-deps -p nib-core -p nib-vault
       - name: Build and package
         run: |
           cargo build --locked --release -p nib
           target/release/nib --version
+          scripts/test-install.sh
           scripts/package.sh x86_64
           cd target/dist
           sha256sum nib-*.tar.gz > SHA256SUMS

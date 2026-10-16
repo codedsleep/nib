@@ -34,7 +34,7 @@ an existing note. --daily opens or creates today's daily note.
 
 *--profile* _NAME_
 	Use independent config, session and application instance. Names contain
-	letters, digits, underscores or hyphens.
+	letters, digits or underscores.
 
 *--new* _TITLE_
 	Create and open a note in the configured new-note folder.
