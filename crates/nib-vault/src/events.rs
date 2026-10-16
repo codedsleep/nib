@@ -14,6 +14,10 @@ pub enum IndexEvent {
     Ready(Box<Index>),
     /// One parsed note to patch into the main-thread index.
     Upsert(Box<NoteMeta>),
+    /// A vault-relative attachment appeared or changed.
+    AttachmentUpsert(String),
+    /// A vault-relative attachment disappeared.
+    AttachmentRemove(String),
     /// A note disappeared.
     Remove(NoteId),
     /// Identity changed, followed by a reparse when available.

@@ -191,24 +191,7 @@ fn preflight(inner: &Inner, op: &FileOp) -> Result<(), VaultError> {
     Ok(())
 }
 fn notify_move(inner: &Inner, from: &Path, to: &Path) {
-    if from
-        .extension()
-        .is_some_and(|e| e.eq_ignore_ascii_case("md"))
-    {
-        if let (Ok(a), Ok(b)) = (inner.id(from), inner.id(to)) {
-            inner.emit_index(IndexEvent::Renamed(a, b));
-        }
-        inner.emit(VaultEvent::NoteRenamed {
-            from: from.into(),
-            to: to.into(),
-        });
-    }
-    if let Some(p) = from.parent() {
-        inner.invalidate(p);
-    }
-    if let Some(p) = to.parent() {
-        inner.invalidate(p);
-    }
+    crate::watch::renamed(inner, from, to, true);
 }
 #[allow(clippy::too_many_lines)] // A single exhaustive operation dispatch owns progress and conflict state.
 fn execute(
@@ -312,7 +295,13 @@ fn execute(
                 let (mut text, fmt) = nib_core::text::decode(&bytes)?;
                 edits.sort_by_key(|e| std::cmp::Reverse(e.byte_range.start));
                 let mut previous = text.len();
+                let source_hash = nib_core::text::fingerprint(&text);
                 for e in &edits {
+                    if e.source_hash != source_hash {
+                        return Err(VaultError::Message(
+                            "rename plan is stale; source note changed".into(),
+                        ));
+                    }
                     if e.byte_range.end > previous
                         || e.byte_range.start > e.byte_range.end
                         || !text.is_char_boundary(e.byte_range.start)
@@ -320,6 +309,11 @@ fn execute(
                     {
                         return Err(VaultError::Message(
                             "rename plan has stale or overlapping offsets".into(),
+                        ));
+                    }
+                    if text.get(e.byte_range.clone()) != Some(e.expected.as_str()) {
+                        return Err(VaultError::Message(
+                            "rename plan is stale; source destination changed".into(),
                         ));
                     }
                     text.replace_range(e.byte_range.clone(), &e.replacement);
@@ -396,6 +390,11 @@ pub(crate) fn write_attachment(
         match fsx::create(&inner.guard, &p, bytes) {
             Ok(()) => {
                 inner.invalidate(&folder);
+                if let Ok(relative) = p.strip_prefix(&inner.root) {
+                    inner.emit_index(IndexEvent::AttachmentUpsert(
+                        relative.to_string_lossy().into_owned(),
+                    ));
+                }
                 return Ok(p);
             }
             Err(VaultError::Io(e)) if e.kind() == std::io::ErrorKind::AlreadyExists => {}

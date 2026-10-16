@@ -53,7 +53,10 @@ pub(crate) fn start(inner: &Arc<Inner>) {
                         .is_some_and(|x| x.eq_ignore_ascii_case("md"))
                     {
                         paths.push(e.into_path());
-                    } else if let Ok(p) = e.path().strip_prefix(&inner.root) {
+                    } else if inner.path(e.path()).is_ok()
+                        && let Ok(p) = e.path().strip_prefix(&inner.root)
+                    {
+                        lock(&inner.hashes).entry(e.path().into()).or_insert(0);
                         attachments.push(p.to_string_lossy().into_owned());
                     }
                 }
@@ -83,9 +86,9 @@ pub(crate) fn start(inner: &Arc<Inner>) {
                                         (std::fs::read(&path), std::fs::metadata(&path))
                                 {
                                     lock(&inner.hashes).insert(path.clone(), hash(&bytes));
-                                    if let (Ok((text, _)), Ok(id)) =
-                                        (nib_core::text::decode(&bytes), inner.id(p))
-                                    {
+                                    if let Ok(id) = inner.id(p) {
+                                        let text = nib_core::text::decode(&bytes)
+                                            .map_or_else(|_| String::new(), |(text, _)| text);
                                         metas.push(nib_core::parse_note(
                                             id,
                                             &text,
@@ -111,15 +114,15 @@ pub(crate) fn start(inner: &Arc<Inner>) {
                     .flatten()
                     .collect()
             });
-            let mut index = nib_core::Index::build(metas);
-            attachments.sort();
-            index.attachments = attachments;
+            let mut index = nib_core::Index::build_with_attachments(metas, attachments);
             let mut updates = lock(&inner.index_updates);
             for event in updates.drain(..) {
                 match event {
                     IndexEvent::Upsert(meta) => index.upsert(*meta),
                     IndexEvent::Remove(id) => index.remove(&id),
                     IndexEvent::Renamed(a, b) => index.rename(&a, b),
+                    IndexEvent::AttachmentUpsert(path) => index.upsert_attachment(&path),
+                    IndexEvent::AttachmentRemove(path) => index.remove_attachment(&path),
                     _ => {}
                 }
             }

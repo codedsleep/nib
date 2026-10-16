@@ -75,9 +75,6 @@ pub(crate) fn start(
     std::thread::Builder::new()
         .name("nib-list".into())
         .spawn(move || {
-            if let Some(inner) = weak.upgrade() {
-                let _ = crate::fsx::cleanup_stale_tmp(&inner.guard, &inner.root, SystemTime::now());
-            }
             while let Ok(req) = rx.recv_blocking() {
                 let Some(inner) = weak.upgrade() else {
                     break;

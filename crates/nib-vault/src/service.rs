@@ -45,6 +45,7 @@ pub(crate) struct Inner {
     pub indexing: AtomicBool,
     pub index_updates: Mutex<Vec<IndexEvent>>,
     pub watch_ready: AtomicBool,
+    pub watch_started: AtomicBool,
     pub fallback: AtomicBool,
     pub watcher: Mutex<Option<crate::watch::Watcher>>,
 }
@@ -122,8 +123,18 @@ impl Inner {
                     fmt,
                 });
             }
-        } else if !own {
-            self.emit(VaultEvent::NoteInvalid { path: path.into() });
+        } else {
+            if let (Ok(id), Ok(m)) = (self.id(path), std::fs::metadata(path)) {
+                self.emit_index(IndexEvent::Upsert(Box::new(nib_core::parse_note(
+                    id,
+                    "",
+                    m.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                    m.len(),
+                ))));
+            }
+            if !own {
+                self.emit(VaultEvent::NoteInvalid { path: path.into() });
+            }
         }
         if let Some(p) = path.parent() {
             self.invalidate(p);
@@ -174,6 +185,23 @@ impl VaultHandle {
         cfg: &Config,
         guard: Guard,
     ) -> Result<(Self, Receiver<VaultEvent>), VaultError> {
+        Self::open_impl(root, cfg, guard, false)
+    }
+    /// Prepare a vault with no root walk before the first frame. Goal B calls
+    /// `start_watching`, `list` and `start_index` in its post-present idle callback.
+    pub fn open_deferred(
+        root: &Path,
+        cfg: &Config,
+        guard: Guard,
+    ) -> Result<(Self, Receiver<VaultEvent>), VaultError> {
+        Self::open_impl(root, cfg, guard, true)
+    }
+    fn open_impl(
+        root: &Path,
+        cfg: &Config,
+        guard: Guard,
+        deferred: bool,
+    ) -> Result<(Self, Receiver<VaultEvent>), VaultError> {
         let root = root.canonicalize()?;
         if !root.is_dir() {
             return Err(VaultError::Denied(root));
@@ -196,12 +224,16 @@ impl VaultHandle {
             indexing: AtomicBool::new(false),
             index_updates: Mutex::new(Vec::new()),
             watch_ready: AtomicBool::new(false),
+            watch_started: AtomicBool::new(false),
             fallback: AtomicBool::new(false),
             watcher: Mutex::new(None),
         });
         crate::listing::start(&inner, list_rx)?;
-        crate::watch::start(&inner)?;
-        Ok((Self { inner }, rx))
+        let handle = Self { inner };
+        if !deferred {
+            handle.start_watching()?;
+        }
+        Ok((handle, rx))
     }
     /// Absolute canonical vault root.
     pub fn root(&self) -> &Path {
@@ -211,6 +243,17 @@ impl VaultHandle {
     /// Symlink targets and protected vault directories obey the same read policy.
     pub fn checked_path(&self, path: &Path) -> Result<PathBuf, VaultError> {
         self.inner.path(path)
+    }
+    /// Start recursive watching and stale-temp cleanup once, off the main thread.
+    pub fn start_watching(&self) -> Result<(), VaultError> {
+        if self.inner.watch_started.swap(true, Ordering::AcqRel) {
+            return Ok(());
+        }
+        if let Err(e) = crate::watch::start(&self.inner) {
+            self.inner.watch_started.store(false, Ordering::Release);
+            return Err(e);
+        }
+        Ok(())
     }
     /// Whether the recursive watcher has finished registration.
     pub fn watcher_ready(&self) -> bool {
@@ -223,6 +266,9 @@ impl VaultHandle {
     /// Read one contained note synchronously for the first editable buffer.
     pub fn read_note(&self, abs: &Path) -> Result<NoteText, VaultError> {
         let path = self.inner.path(abs)?;
+        if let Err(e) = fsx::recover_temp_for(&self.inner.guard, &path) {
+            self.inner.notice(e.to_string());
+        }
         let bytes = std::fs::read(&path)?;
         lock(&self.inner.hashes).insert(path, hash(&bytes));
         match text::decode(&bytes) {

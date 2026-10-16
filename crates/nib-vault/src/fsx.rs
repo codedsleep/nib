@@ -89,6 +89,36 @@ pub fn move_entry(guard: &Guard, from: &Path, to: &Path) -> Result<(), VaultErro
     fs::rename(from, to)?;
     Ok(())
 }
+fn cleanup_file(guard: &Guard, path: &Path, now: SystemTime) -> Result<bool, VaultError> {
+    let meta = match path.symlink_metadata() {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(false),
+        Err(e) => return Err(e.into()),
+    };
+    if meta.is_file()
+        && now
+            .duration_since(meta.modified()?)
+            .unwrap_or(Duration::ZERO)
+            > Duration::from_secs(60)
+    {
+        guard.check(path)?;
+        fs::remove_file(path)?;
+        return Ok(true);
+    }
+    Ok(false)
+}
+/// Recover only the stale temporary sibling associated with one opened note.
+pub(crate) fn recover_temp_for(guard: &Guard, target: &Path) -> Result<(), VaultError> {
+    let Some(parent) = target.parent() else {
+        return Ok(());
+    };
+    let tmp = parent.join(format!(
+        ".{}.nib-tmp",
+        target.file_stem().unwrap_or_default().to_string_lossy()
+    ));
+    cleanup_file(guard, &tmp, SystemTime::now())?;
+    Ok(())
+}
 /// Remove only old regular nib temporary files, never symlinks or note files.
 pub fn cleanup_stale_tmp(
     guard: &Guard,
@@ -103,15 +133,7 @@ pub fn cleanup_stale_tmp(
         if !name.starts_with('.') || !name.ends_with(".nib-tmp") {
             continue;
         }
-        let meta = e.path().symlink_metadata()?;
-        if meta.is_file()
-            && now
-                .duration_since(meta.modified()?)
-                .unwrap_or(Duration::ZERO)
-                > Duration::from_secs(60)
-        {
-            guard.check(&e.path())?;
-            fs::remove_file(e.path())?;
+        if cleanup_file(guard, &e.path(), now)? {
             removed.push(e.path());
         }
     }
@@ -158,6 +180,37 @@ pub fn trash(guard: &Guard, path: &Path) -> Result<(), VaultError> {
         .trash(gio::Cancellable::NONE)
         .map_err(|e| VaultError::Message(e.to_string()))
 }
+fn copy_regular(
+    guard: &Guard,
+    source: &Path,
+    dest: &Path,
+    permissions: fs::Permissions,
+) -> Result<(), VaultError> {
+    let _lock = WRITES
+        .lock()
+        .map_err(|e| VaultError::Message(e.to_string()))?;
+    guard.check(dest)?;
+    let parent = dest
+        .parent()
+        .ok_or_else(|| VaultError::Denied(dest.into()))?;
+    let tmp = parent.join(format!(
+        ".{}.nib-tmp",
+        dest.file_stem().unwrap_or_default().to_string_lossy()
+    ));
+    guard.check(&tmp)?;
+    let mut input = fs::File::open(source)?;
+    let mut output = OpenOptions::new().write(true).create_new(true).open(&tmp)?;
+    let result = (|| -> Result<(), VaultError> {
+        std::io::copy(&mut input, &mut output)?;
+        output.set_permissions(permissions)?;
+        output.sync_all()?;
+        fs::hard_link(&tmp, dest)?;
+        fs::File::open(parent)?.sync_all()?;
+        Ok(())
+    })();
+    let _ = fs::remove_file(&tmp);
+    result
+}
 /// Copy a file atomically, or recursively create a new directory tree.
 /// Symbolic links remain links; every child passes the same confinement check.
 pub fn copy(guard: &Guard, source: &Path, dest: &Path) -> Result<(), VaultError> {
@@ -175,8 +228,7 @@ pub fn copy(guard: &Guard, source: &Path, dest: &Path) -> Result<(), VaultError>
         }
         set_permissions(guard, dest, meta.permissions())?;
     } else if meta.is_file() {
-        create(guard, dest, &fs::read(source)?)?;
-        set_permissions(guard, dest, meta.permissions())?;
+        copy_regular(guard, source, dest, meta.permissions())?;
     } else {
         return Err(VaultError::Message(
             "only regular files, directories and symlinks can be copied".into(),
