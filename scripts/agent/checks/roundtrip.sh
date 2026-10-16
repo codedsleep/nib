@@ -10,7 +10,7 @@ for f in crlf.md bom.md mixed-eol.md no-trailing-newline.md linked-symlink.md; d
     settle 0.3
     check "$f: saved with no edit, bytes identical" same_bytes "$f" "$before"
     # An edit that is undone by hand: the remembered format is used again.
-    vin key End type x key BackSpace key ctrl+s
+    vin key A type x key BackSpace key Escape key ctrl+s
     settle 0.3
     check "$f: typed and erased, bytes identical" same_bytes "$f" "$before"
 done

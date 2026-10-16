@@ -39,6 +39,16 @@ session() {
 one() {
     local name=$1 out="$artifacts/$1"
     case $name in
+        listcont)
+            session "$name" "$out-en" --env LANG=en_GB.UTF-8 -- "$vault" || return 1
+            # de_DE is not installed here; LANGUAGE still selects German strings.
+            session "$name" "$out-de" \
+                --env LANG=en_GB.UTF-8 --env LANGUAGE=de -- "$vault"
+            ;;
+        complete)
+            session "$name" "$out" -- "$vault" || return 1
+            NOT_READY=1 session "$name" "$out-not-ready" --env NIB_TEST_INDEX_DELAY_MS=20000 -- "$vault"
+            ;;
         *) session "$name" "$out" -- "$vault" ;;
     esac
 }
