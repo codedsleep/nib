@@ -53,9 +53,12 @@ in the reviewed paths. The platform and owner validation limits below remain.
    plus `complete.sh` and `paste.sh`.
 7. **Medium — a clean release runner could not run integration tests.**
    `.github/workflows/release.yml` omitted the fixture required by the vault
-   integration test. The workflow now generates it before testing, checks
+   integration test. Its floating stable compiler also selected Rust 1.99,
+   introducing new clippy failures after the local 1.98.1 validation. The
+   unpublished tag was replaced with a commit pinning CI to Rust 1.98.1. The
+   workflow now generates the fixture before testing, checks
    generated documentation/API docs, and exercises packaged installation.
-   Proof: local `scripts/check.sh`; the tag workflow is the remote proof.
+   Proof: local `scripts/check.sh` and the green [tag workflow](https://github.com/codedsleep/markdown-trekfm-rust/actions/runs/38857984565). The published Ubuntu archive also installs and maps a fixture window on the workstation.
 8. **Low — documented logging levels were ignored.**
    `crates/nib-vault/src/log.rs` treated `error` and `off` as `warn`. Both now map
    to their documented levels. Proof: `log::tests::documented_levels`.
@@ -86,7 +89,7 @@ in the reviewed paths. The platform and owner validation limits below remain.
   symlink target, including ignored `.obsidian` files. Only sixteen explicitly
   created notes/attachments differ from the baseline. The live vault was copied
   once and was never opened or watched by nib.
-- Final local gate: `scripts/check.sh` passes for 0.1.0 (68 tests, four opt-in/helper tests ignored); the full UI suite passes all 27 checks / 312 assertions.
+- Final local gate: `scripts/check.sh` passes for 0.1.0 (68 tests, four opt-in/helper tests ignored); core line coverage is 94.85%; the full UI suite passes all 27 checks / 312 assertions.
 - The generated man page renders with scdoc/man; desktop-file validation and
   temporary-prefix install/uninstall/checksum rejection checks pass.
 

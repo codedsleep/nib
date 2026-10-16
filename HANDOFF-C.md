@@ -4,6 +4,16 @@ Phase 10 reviews and hardens the implementation, exercises a copied real vault,
 and ships the private `v0.1.0` release. Findings and regression evidence are in
 `CODE-REVIEW.md`; implementation and measurements are in `.planning/SCOPE.md`.
 
+[v0.1.0 is published](https://github.com/codedsleep/markdown-trekfm-rust/releases/tag/v0.1.0)
+from tag commit `876a9f9`; the [release workflow](https://github.com/codedsleep/markdown-trekfm-rust/actions/runs/38857984565)
+is green. The workstation installer verified the published archive, installed it
+into `~/.local`, and confirmed `nib 0.1.0` plus a mapped fixture window without
+GTK criticals. The first unpublished tag attempt selected Rust 1.99 and failed a
+new clippy lint; CI is now pinned to the validated Rust 1.98.1 toolchain.
+
+Validation: 68 tests, 27 headless UI checks / 312 assertions, 94.85% core line
+coverage, the copied-vault acceptance manifest, and installer/checksum checks.
+
 The repo remains `codedsleep/markdown-trekfm-rust`, on `master`. Commits are atomic;
 no repository rename, live-vault migration or folio service change was performed.
 
@@ -22,8 +32,8 @@ GTK, GtkSourceView and cage are absent there. Backend numbers do not stand in fo
 GUI startup, first paint, typing, finder latency, scrolling or RSS.
 
 Owner desktop QA remains for dropping attachments, the attachment and first-run
-folder choosers, and Hyprland activation-token behavior. Startup/RSS on the
-workstation and complete large-note rendering miss their original targets;
+folder choosers, and Hyprland activation-token behavior. Startup/RSS, the final large-note source first paint on the
+workstation, and complete large-note rendering miss their original targets;
 measurements and causes are recorded, with GTK renderer selection left unchanged.
 
 ## Switch-over
