@@ -1,6 +1,6 @@
 //! Application lifetime: one window per vault, its start-up path and the
 //! vault event stream.
-use crate::{debug, editor, files, gtk, registry, status, tabs, theme};
+use crate::{debug, editor, files, gtk, panel, registry, status, tabs, theme};
 use gtk::prelude::*;
 use nib_core::{Index, NoteId, settings::Config};
 use nib_vault::{
@@ -235,7 +235,12 @@ pub struct App {
     pub tabs: tabs::Tabs,
     pub outer: gtk::Paned,
     pub inner: gtk::Paned,
-    pub right: gtk::Box,
+    pub panel: panel::Panel,
+    pub completion: editor::completion::Completion,
+    /// The question of an open dialog, for `--test-dump`.
+    pub dialog: RefCell<Option<String>>,
+    /// `:qa` answered "quit anyway": do not save on the way out.
+    pub discard_on_close: Cell<bool>,
     pub session: RefCell<Session>,
     /// The open `F1` key list and its filtered model.
     pub help: RefCell<Option<(gtk::Window, gtk::FilterListModel)>>,
@@ -277,7 +282,6 @@ impl App {
             .build();
         let outer = gtk::Paned::new(gtk::Orientation::Horizontal);
         let inner = gtk::Paned::new(gtk::Orientation::Horizontal);
-        let right = gtk::Box::new(gtk::Orientation::Vertical, 0);
         let app = Rc::new_cyclic(|this: &Weak<App>| App {
             window: window.clone(),
             files: files::Files::new(this, &root, &session),
@@ -292,7 +296,10 @@ impl App {
             index_ready: Cell::new(false),
             outer,
             inner,
-            right,
+            panel: panel::Panel::new(this),
+            completion: editor::completion::Completion::new(),
+            dialog: RefCell::new(None),
+            discard_on_close: Cell::new(false),
             session: RefCell::new(session),
             help: RefCell::new(None),
             t0,
@@ -344,7 +351,7 @@ impl App {
         self.outer.set_resize_start_child(false);
         self.outer.set_shrink_start_child(false);
         self.inner.set_start_child(Some(&self.tabs.root));
-        self.inner.set_end_child(Some(&self.right));
+        self.inner.set_end_child(Some(&self.panel.root));
         self.inner.set_resize_end_child(false);
         self.inner.set_shrink_end_child(false);
         self.outer.set_end_child(Some(&self.inner));
@@ -352,11 +359,9 @@ impl App {
         column.append(&self.outer);
         column.append(&self.status.root);
         self.window.set_child(Some(&column));
-        self.right.add_css_class("nib-panel");
-        self.right.set_width_request(160);
         let session = self.session.borrow();
         self.files.root.set_visible(session.files_visible);
-        self.right.set_visible(session.right_visible);
+        self.panel.root.set_visible(session.right_visible);
         // Files 1 : centre 4 : right 1.5 of the default width, unless saved.
         let width = 1280.0_f64;
         let outer = session
@@ -380,8 +385,21 @@ impl App {
             self.status.error(&format!("watching: {e}"));
         }
         self.files.start(self);
-        self.vault.start_index();
         self.status.set_index("indexing…");
+        // Debug builds can hold the index back to check the not-ready paths.
+        let delay = std::env::var("NIB_TEST_INDEX_DELAY_MS")
+            .ok()
+            .filter(|_| cfg!(debug_assertions))
+            .and_then(|v| v.parse::<u64>().ok());
+        match delay {
+            Some(ms) => {
+                let vault = self.vault.clone();
+                glib::timeout_add_local_once(std::time::Duration::from_millis(ms), move || {
+                    vault.start_index();
+                });
+            }
+            None => self.vault.start_index(),
+        }
         let weak = self.this.clone();
         glib::idle_add_local_once(move || {
             if let Some(app) = weak.upgrade() {
@@ -439,6 +457,7 @@ impl App {
             IndexEvent::AttachmentUpsert(path) => self.index.borrow_mut().upsert_attachment(&path),
             IndexEvent::AttachmentRemove(path) => self.index.borrow_mut().remove_attachment(&path),
         }
+        self.panel.queue(self);
         if self.index_ready.get() {
             let count = self.index.borrow().notes.len();
             self.status
@@ -474,8 +493,10 @@ impl App {
             Ok(text) => {
                 let tab = self.tabs.current();
                 editor::save_if_modified(self, &tab);
+                self.completion.close();
                 tab.load(self, path, text, line.unwrap_or(1));
                 self.update_title();
+                self.panel.queue(self);
                 tab.view.grab_focus();
             }
             Err(e) => self
@@ -544,6 +565,9 @@ impl App {
     }
 
     fn shutdown(&self) {
+        if self.discard_on_close.get() || !self.config.borrow().editor.autosave {
+            return;
+        }
         for tab in self.tabs.all() {
             editor::save_if_modified(self, &tab);
         }

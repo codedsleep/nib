@@ -1,6 +1,6 @@
 //! The action registry (P§13, §17): one table drives the window shortcuts,
 //! the files-column keys, the `:` command router, the palette and `F1`.
-use crate::{app::App, editor, files, gtk};
+use crate::{app::App, commands, editor, files, gtk, launch, panel};
 use gtk::prelude::*;
 use std::rc::Rc;
 
@@ -9,8 +9,12 @@ use std::rc::Rc;
 pub enum Scope {
     /// GTK accelerators on the window, bubble phase (an entry eats them first).
     Window,
+    /// Accelerator chords the editor's own controller runs before vim sees them.
+    Editor,
     /// Vim-notation sequences, only while the files column has the keyboard.
     Files,
+    /// Only a `:` command or a palette row.
+    Command,
 }
 
 pub type Handler = fn(&Rc<App>, &str);
@@ -18,7 +22,7 @@ pub type Handler = fn(&Rc<App>, &str);
 pub struct Entry {
     pub name: &'static str,
     pub label: &'static str,
-    /// Window: GTK accelerator syntax (`<Alt>o`). Files/Reading: vim notation (`gg`, `<C-d>`).
+    /// Window/Editor: GTK accelerator syntax (`<Alt>o`). Files: vim notation (`gg`, `<C-d>`).
     pub keys: &'static [&'static str],
     pub scope: Scope,
     /// `:` command names; the first is shown in the palette.
@@ -44,15 +48,118 @@ const fn entry(
     }
 }
 
-use Scope::{Files as F, Window as W};
+use Scope::{Command as C, Editor as E, Files as F, Window as W};
 
 pub static ENTRIES: &[Entry] = &[
-    entry("save", "Save note", W, &["<Control>s"], &[], |app, _| {
-        editor::save_current(app);
-    }),
-    entry("quit", "Quit", W, &["<Control>q"], &[], |app, _| {
-        app.window.close();
-    }),
+    // ---- notes and tabs ----
+    entry(
+        "save",
+        "Save note",
+        W,
+        &["<Control>s"],
+        &["w", "w!", "write"],
+        commands::write,
+    ),
+    entry(
+        "write-quit",
+        "Save and close the tab",
+        C,
+        &[],
+        &["wq", "x"],
+        commands::write_quit,
+    ),
+    entry(
+        "close-tab",
+        "Close the tab",
+        C,
+        &[],
+        &["q", "quit"],
+        commands::quit,
+    ),
+    entry(
+        "close-tab-force",
+        "Close the tab, dropping changes",
+        C,
+        &[],
+        &["q!"],
+        commands::quit_force,
+    ),
+    entry(
+        "quit",
+        "Quit",
+        W,
+        &["<Control>q"],
+        &["qa", "qa!", "qall"],
+        commands::quit_all,
+    ),
+    entry(
+        "edit-note",
+        "Open a note by name",
+        C,
+        &[],
+        &["e", "edit"],
+        commands::edit,
+    ),
+    entry(
+        "reload-note",
+        "Reload the note from disk, dropping changes",
+        C,
+        &[],
+        &["e!"],
+        commands::reload,
+    ),
+    // ---- editor chords ----
+    entry(
+        "follow",
+        "Follow the link under the cursor",
+        E,
+        &["<Alt>Return"],
+        &["follow"],
+        |app, _| {
+            launch::follow_cursor(app);
+        },
+    ),
+    entry(
+        "check",
+        "Toggle the task checkbox",
+        E,
+        &["<Control>Return"],
+        &["check"],
+        |app, _| {
+            editor::behaviours::toggle_task(app);
+        },
+    ),
+    entry(
+        "complete",
+        "Complete the link or tag at the cursor",
+        E,
+        &["<Control>space"],
+        &[],
+        |app, _| {
+            editor::completion::force(app);
+        },
+    ),
+    entry(
+        "heading-up",
+        "Promote the heading",
+        E,
+        &["<Control><Shift>Up"],
+        &[],
+        |app, _| {
+            editor::behaviours::cycle_heading(app, -1);
+        },
+    ),
+    entry(
+        "heading-down",
+        "Demote the heading",
+        E,
+        &["<Control><Shift>Down"],
+        &[],
+        |app, _| {
+            editor::behaviours::cycle_heading(app, 1);
+        },
+    ),
+    // ---- window ----
     entry(
         "toggle-files",
         "Show or hide the files column",
@@ -67,7 +174,27 @@ pub static ENTRIES: &[Entry] = &[
         W,
         &["F8"],
         &[],
-        |app, _| app.right.set_visible(!app.right.is_visible()),
+        |app, _| panel::toggle(app),
+    ),
+    entry(
+        "backlinks",
+        "Focus the backlinks",
+        W,
+        &["<Alt>b"],
+        &["backlinks"],
+        |app, _| {
+            panel::focus(app, panel::Page::Backlinks);
+        },
+    ),
+    entry(
+        "outline",
+        "Focus the outline",
+        C,
+        &[],
+        &["outline"],
+        |app, _| {
+            panel::focus(app, panel::Page::Outline);
+        },
     ),
     entry("fullscreen", "Fullscreen", W, &["F11"], &[], |app, _| {
         if app.window.is_fullscreen() {
@@ -90,9 +217,7 @@ pub static ENTRIES: &[Entry] = &[
         W,
         &["F1"],
         &["help"],
-        |app, _| {
-            crate::help::show(app);
-        },
+        |app, _| crate::help::show(app),
     ),
     entry(
         "focus-files",
@@ -111,14 +236,34 @@ pub static ENTRIES: &[Entry] = &[
         |app, _| editor::focus(app),
     ),
     entry(
+        "focus-panel",
+        "Focus the right panel",
+        W,
+        &["<Alt>3"],
+        &[],
+        |app, _| {
+            panel::focus(app, panel::Page::Current);
+        },
+    ),
+    entry(
+        "version",
+        "Show nib's version",
+        C,
+        &[],
+        &["version"],
+        |app, _| {
+            app.status
+                .notice(concat!("nib ", env!("CARGO_PKG_VERSION")));
+        },
+    ),
+    // ---- files column ----
+    entry(
         "files-down",
         "Cursor down",
         F,
         &["j", "<Down>"],
         &[],
-        |app, _| {
-            app.files.step(app, 1, true);
-        },
+        |app, _| app.files.step(app, 1, true),
     ),
     entry("files-up", "Cursor up", F, &["k", "<Up>"], &[], |app, _| {
         app.files.step(app, -1, true);
@@ -129,9 +274,7 @@ pub static ENTRIES: &[Entry] = &[
         F,
         &["gg", "<Home>"],
         &[],
-        |app, _| {
-            app.files.jump(app, 0);
-        },
+        |app, _| app.files.jump(app, 0),
     ),
     entry(
         "files-bottom",
@@ -139,9 +282,7 @@ pub static ENTRIES: &[Entry] = &[
         F,
         &["G", "<End>"],
         &[],
-        |app, _| {
-            app.files.jump(app, u32::MAX);
-        },
+        |app, _| app.files.jump(app, u32::MAX),
     ),
     entry(
         "files-half-down",
@@ -149,9 +290,7 @@ pub static ENTRIES: &[Entry] = &[
         F,
         &["<C-d>"],
         &[],
-        |app, _| {
-            app.files.page(app, 0.5);
-        },
+        |app, _| app.files.page(app, 0.5),
     ),
     entry(
         "files-half-up",
@@ -159,9 +298,7 @@ pub static ENTRIES: &[Entry] = &[
         F,
         &["<C-u>"],
         &[],
-        |app, _| {
-            app.files.page(app, -0.5);
-        },
+        |app, _| app.files.page(app, -0.5),
     ),
     entry(
         "files-page-down",
@@ -189,11 +326,55 @@ pub static ENTRIES: &[Entry] = &[
     ),
     entry(
         "files-open",
-        "Enter the folder or open the note",
+        "Enter the folder or open the file",
         F,
         &["l", "<CR>", "o", "<Right>"],
         &[],
-        |app, _| app.files.open(app),
+        |app, _| {
+            app.files.open(app);
+        },
+    ),
+    entry(
+        "files-mark",
+        "Select or unselect, then step down",
+        F,
+        &["<Space>"],
+        &[],
+        |app, _| {
+            app.files.toggle_mark(app);
+        },
+    ),
+    entry(
+        "files-visual",
+        "Visual selection mode",
+        F,
+        &["v"],
+        &[],
+        |app, _| app.files.visual_mode(app),
+    ),
+    entry(
+        "files-select-all",
+        "Select everything",
+        F,
+        &["<C-a>"],
+        &[],
+        |app, _| app.files.mark_all(),
+    ),
+    entry(
+        "files-invert",
+        "Invert the selection",
+        F,
+        &["<C-r>"],
+        &[],
+        |app, _| app.files.invert_marks(),
+    ),
+    entry(
+        "files-clear",
+        "Clear the selection",
+        F,
+        &["<Esc>"],
+        &[],
+        |app, _| app.files.clear_marks(app),
     ),
     entry(
         "files-keys",
@@ -201,9 +382,7 @@ pub static ENTRIES: &[Entry] = &[
         F,
         &["~"],
         &[],
-        |app, _| {
-            crate::help::show(app);
-        },
+        |app, _| crate::help::show(app),
     ),
     entry(
         "files-to-editor",
@@ -230,6 +409,33 @@ pub fn run(app: &Rc<App>, name: &str, arg: &str) -> bool {
         }
         None => false,
     }
+}
+
+pub fn by_command(name: &str) -> Option<&'static Entry> {
+    ENTRIES.iter().find(|e| e.commands.contains(&name))
+}
+
+thread_local! {
+    /// Editor and window chords parsed once (GTK must be initialised to parse).
+    static CHORDS: Vec<(gtk::gdk::Key, gtk::gdk::ModifierType, &'static Entry)> = ENTRIES
+        .iter()
+        .filter(|e| matches!(e.scope, Scope::Editor | Scope::Window))
+        .flat_map(|e| e.keys.iter().map(move |k| (k, e)))
+        .filter_map(|(k, e)| gtk::accelerator_parse(*k).map(|(key, mods)| (key.to_lower(), mods, e)))
+        .collect();
+}
+
+/// The editor or window chord for a key press, if any. The editor runs
+/// window chords itself: vim would otherwise eat `Alt+B` as `b`.
+pub fn chord(keyval: gtk::gdk::Key, state: gtk::gdk::ModifierType) -> Option<&'static Entry> {
+    use gtk::gdk::ModifierType as M;
+    let mods = state & (M::CONTROL_MASK | M::SHIFT_MASK | M::ALT_MASK);
+    let key = keyval.to_lower();
+    CHORDS.with(|keys| {
+        keys.iter()
+            .find(|(k, m, _)| *k == key && *m == mods)
+            .map(|(_, _, e)| *e)
+    })
 }
 
 /// How a typed files-column sequence relates to the table.
@@ -294,7 +500,7 @@ pub fn install(app: &Rc<App>) {
 
 /// `<Alt>o` → `Alt+O`, `<Control><Shift>Up` → `Ctrl+Shift+Up`; vim notation is shown as is.
 pub fn display_key(scope: Scope, key: &str) -> String {
-    if scope != Scope::Window {
+    if !matches!(scope, Scope::Window | Scope::Editor) {
         return key.to_owned();
     }
     let mut out = String::new();
@@ -387,8 +593,14 @@ mod tests {
             assert!(!e.label.is_empty(), "{} has no label", e.name);
             assert!(names.insert(e.name), "duplicate name {}", e.name);
             for k in e.keys {
+                // Editor chords and window accelerators share one namespace.
+                let scope = if e.scope == Scope::Editor {
+                    Scope::Window
+                } else {
+                    e.scope
+                };
                 assert!(
-                    keys.insert((format!("{:?}", e.scope), (*k).to_owned())),
+                    keys.insert((format!("{scope:?}"), (*k).to_owned())),
                     "{k} is bound twice in {:?}",
                     e.scope
                 );

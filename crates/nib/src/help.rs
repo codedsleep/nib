@@ -15,7 +15,8 @@ pub fn rows() -> Vec<String> {
                 .map(|k| registry::display_key(e.scope, k))
                 .collect();
             let scope = match e.scope {
-                registry::Scope::Window => "",
+                registry::Scope::Window | registry::Scope::Command => "",
+                registry::Scope::Editor => "  (editor)",
                 registry::Scope::Files => "  (files)",
             };
             let commands: Vec<String> = e.commands.iter().map(|c| format!(":{c}")).collect();

@@ -1,5 +1,9 @@
 //! The open tabs (P§15) and how external changes reach them (P§16).
-use crate::{app::App, editor::Tab, gtk};
+use crate::{
+    app::App,
+    editor::{Tab, vim},
+    gtk,
+};
 use gtk::prelude::*;
 use nib_core::text::TextFormat;
 use nib_vault::NoteText;
@@ -87,9 +91,43 @@ impl Tabs {
         self.active.set(index);
         self.stack.set_visible_child(&tab.root);
         if let Some(app) = self.app.upgrade() {
+            app.completion.close();
             app.update_title();
             tab.show_position(&app);
+            vim::show(&app, &tab);
             app.status.set_words(tab.word_count.get());
+            if let Some(words) = tab.words.borrow().as_ref() {
+                words.poke();
+            }
+            app.panel.queue(&app);
+        }
+    }
+
+    /// Close a tab (its edits are the caller's business). The last tab is
+    /// replaced by an empty one: the window stays.
+    pub fn close(&self, app: &Rc<App>, tab: &Rc<Tab>) {
+        let Some(index) = self.list.borrow().iter().position(|t| t.id == tab.id) else {
+            return;
+        };
+        app.completion.close();
+        let focused = tab.view.has_focus();
+        if self.list.borrow().len() == 1 {
+            self.new_tab();
+        }
+        let current = self.active.get();
+        self.list.borrow_mut().remove(index);
+        vim::detach(tab);
+        app.completion.release(&tab.view);
+        self.stack.remove(&tab.root);
+        let len = self.list.borrow().len();
+        let next = if current > index || current >= len {
+            current.saturating_sub(1)
+        } else {
+            current
+        };
+        self.select(next.min(len - 1));
+        if focused {
+            self.current().view.grab_focus();
         }
     }
 

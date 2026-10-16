@@ -42,6 +42,15 @@ pub fn trace_ms(name: &str, started: Instant) {
     }
 }
 
+pub fn trace_us(name: &str, started: Instant) {
+    if tracing() {
+        eprintln!(
+            "name={name} us={:.3}",
+            started.elapsed().as_secs_f64() * 1_000_000.0
+        );
+    }
+}
+
 /// Print `name` once the widget's next frame has been painted.
 pub fn trace_paint(widget: &impl IsA<gtk::Widget>, name: &'static str, started: Instant) {
     if !tracing() {
@@ -189,7 +198,7 @@ pub fn focus_region(app: &App) -> &'static str {
     if focus.is_ancestor(&app.files.root) {
         return "files";
     }
-    if focus.is_ancestor(&app.right) {
+    if focus.is_ancestor(&app.panel.root) {
         return "panel";
     }
     if focus.has_css_class("nib-reading") {
@@ -222,10 +231,12 @@ pub fn dump(app: &Rc<App>) -> String {
     format!(
         concat!(
             "{{\"tabs\":{},\"cursor\":{{\"line\":{},\"column\":{}}},",
-            "\"files\":{{\"folder\":{},\"cursor\":{},\"rows\":{}}},",
+            "\"files\":{{\"folder\":{},\"cursor\":{},\"rows\":{},\"selection\":{}}},",
             "\"status\":{{\"mode\":{},\"pending\":{},\"path\":{},\"words\":{},\"position\":{},\"right\":{}}},",
             "\"focus\":{},\"focus_widget\":{},\"panels\":{{\"files\":{},\"right\":{}}},\"index_ready\":{},\"title\":{},",
-            "\"vault_key\":{},\"keys_shown\":{}}}\n"
+            "\"vault_key\":{},\"keys_shown\":{},\"registry_size\":{},",
+            "\"completion\":{{\"visible\":{},\"rows\":{}}},",
+            "\"panel\":{{\"page\":{},\"rows\":{},\"section\":{}}},\"dialog\":{}}}\n"
         ),
         list(tab_json),
         cursor.line() + 1,
@@ -233,6 +244,7 @@ pub fn dump(app: &Rc<App>) -> String {
         json(&files_folder),
         json(&app.files.cursor_name().unwrap_or_default()),
         app.files.store.n_items(),
+        list(app.files.marked().iter().map(|e| json(&e.name))),
         json(&status[0]),
         json(&status[1]),
         json(&status[2]),
@@ -246,11 +258,23 @@ pub fn dump(app: &Rc<App>) -> String {
                 .unwrap_or_default()
         ),
         app.files.root.is_visible(),
-        app.right.is_visible(),
+        app.panel.root.is_visible(),
         app.index_ready.get(),
         json(&app.window.title().unwrap_or_default()),
         json(&app.key),
         crate::help::shown(app).map_or_else(|| "null".into(), |n| n.to_string()),
+        crate::registry::ENTRIES.len(),
+        app.completion.visible(),
+        list(app.completion.rows().iter().map(|r| json(r))),
+        json(app.panel.page()),
+        list(app.panel.texts().iter().map(|r| json(r))),
+        app.panel
+            .current_section()
+            .map_or_else(|| "null".into(), |s| json(&s)),
+        app.dialog
+            .borrow()
+            .as_deref()
+            .map_or_else(|| "null".into(), json),
     )
 }
 

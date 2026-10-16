@@ -1,5 +1,9 @@
 //! One editor tab (P§9): a `GtkSourceView` buffer and view over one note, its
 //! remembered text format, and the idle-debounced status work.
+pub mod behaviours;
+pub mod completion;
+pub mod vim;
+
 use crate::{app::App, debug, gtk, theme};
 use nib_core::text::TextFormat;
 use nib_vault::NoteText;
@@ -90,6 +94,10 @@ pub struct Tab {
     pub root: gtk::Box,
     banner: gtk::Label,
     pub words: RefCell<Option<Rc<Debounce>>>,
+    /// The vim context while `editor.vim` is on.
+    pub vim: RefCell<Option<vim::Vim>>,
+    /// nib's own key controller (behaviours, editor chords, completion keys).
+    pub keys: gtk::EventControllerKey,
     /// The rest of a long note still to be inserted after the first frame.
     pending: RefCell<Option<String>>,
     /// Words of the last idle count, shown when the tab becomes current.
@@ -134,7 +142,8 @@ impl Tab {
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         root.append(&banner);
         root.append(&content);
-        let tab = Rc::new(Self {
+        let tab = Rc::new_cyclic(|weak| Self {
+            keys: behaviours::controller(app, weak),
             id,
             path: RefCell::new(None),
             fmt: RefCell::new(TextFormat::default()),
@@ -146,11 +155,14 @@ impl Tab {
             root,
             banner,
             words: RefCell::new(None),
+            vim: RefCell::new(None),
             pending: RefCell::new(None),
             word_count: Cell::new(None),
             app: app.this.clone(),
         });
         tab.connect(app);
+        behaviours::install(app, &tab);
+        vim::sync(app, &tab);
         tab
     }
 
@@ -186,6 +198,11 @@ impl Tab {
             };
             if app.tabs.is_current(&tab) {
                 tab.show_position(&app);
+                app.panel
+                    .follow_cursor(u32::try_from(tab.cursor_line()).unwrap_or(1));
+                if app.completion.visible() {
+                    completion::typed(&app, &tab);
+                }
             }
         });
         let weak = app.this.clone();
@@ -303,14 +320,21 @@ impl Tab {
             .set_position(iter.line() + 1, iter.line_offset() + 1);
     }
 
-    /// Work done 300 ms after the last edit: word count (and, later, outline).
-    fn idle_update(&self, app: &Rc<App>) {
+    /// Work done 300 ms after the last edit: word count and outline.
+    pub fn idle_update(&self, app: &Rc<App>) {
         let text = self.text();
         let words = nib_core::edit::word_count(&text);
         self.word_count.set(Some(words));
         if app.tabs.is_current_id(self.id) {
             app.status.set_words(Some(words));
+            let line = u32::try_from(self.cursor_line()).unwrap_or(1);
+            app.panel.set_outline(nib_core::edit::outline(&text), line);
         }
+    }
+
+    /// One-based cursor line.
+    pub fn cursor_line(&self) -> i32 {
+        self.buffer.iter_at_mark(&self.buffer.get_insert()).line() + 1
     }
 
     /// Insert the remainder of a two-step load now, if any is left.
@@ -427,9 +451,27 @@ pub fn save_if_modified(app: &App, tab: &Tab) {
     }
 }
 
-pub fn save_current(app: &Rc<App>) {
-    let tab = app.tabs.current();
-    save(app, &tab);
+/// Give an untitled tab its note: created in the new-note folder, never over
+/// an existing file.
+pub fn save_as(app: &Rc<App>, tab: &Tab, name: &str) {
+    let Some(id) = crate::launch::new_note_id(app, name) else {
+        app.status
+            .error(&format!("cannot make a note called {name}"));
+        return;
+    };
+    let text = tab.text();
+    match app.vault.create_note(&id, &text) {
+        Ok(path) => {
+            *tab.path.borrow_mut() = Some(path);
+            *tab.fmt.borrow_mut() = TextFormat::default();
+            tab.buffer.set_modified(false);
+            app.update_title();
+            app.status.notice(&format!("created {}", id.filename()));
+        }
+        Err(e) => app
+            .status
+            .error(&format!("cannot create {}: {e}", id.filename())),
+    }
 }
 
 /// Alt+2: focus the current tab's editor.

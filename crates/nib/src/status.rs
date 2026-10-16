@@ -65,6 +65,11 @@ impl Status {
         }
     }
 
+    /// Slot 1: the vim command bar (`-- INSERT --`, `:w`), `NOR` when empty.
+    pub fn set_mode(&self, text: &str) {
+        self.mode.set_text(text);
+    }
+
     /// Slot 2: keys of a started sequence.
     pub fn set_pending(&self, text: &str) {
         self.pending.set_text(text);

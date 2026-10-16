@@ -5,10 +5,14 @@ use gtk4 as gtk;
 use std::sync::Mutex;
 
 mod app;
+mod commands;
 mod debug;
+mod dialogs;
 mod editor;
 mod files;
 mod help;
+mod launch;
+mod panel;
 mod registry;
 mod status;
 mod tabs;

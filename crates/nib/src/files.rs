@@ -11,11 +11,55 @@ use std::{
     sync::Arc,
 };
 
-/// One row: the entry, its display name, and its selection and cut marks.
+/// One row: the entry, its display name, its selection and cut marks, and
+/// the name label it is bound to (so a mark repaints just that row; nib
+/// forbids `unsafe`, which rules out a `GObject` item with properties).
 pub struct Row {
     pub entry: Entry,
     pub label: String,
     pub marked: Cell<bool>,
+    pub cut: Cell<bool>,
+    bound: RefCell<Option<glib::WeakRef<gtk::Label>>>,
+}
+
+impl Row {
+    fn new(entry: Entry) -> Self {
+        let label = if entry.directory {
+            format!("{}/", entry.name)
+        } else {
+            entry.name.clone()
+        };
+        Self {
+            entry,
+            label,
+            marked: Cell::new(false),
+            cut: Cell::new(false),
+            bound: RefCell::new(None),
+        }
+    }
+
+    fn paint(&self) {
+        if let Some(name) = self
+            .bound
+            .borrow()
+            .as_ref()
+            .and_then(glib::WeakRef::upgrade)
+        {
+            paint(&name, self);
+        }
+    }
+}
+
+fn paint(name: &gtk::Label, row: &Row) {
+    for (class, on) in [("marked", row.marked.get()), ("cut", row.cut.get())] {
+        if name.has_css_class(class) != on {
+            if on {
+                name.add_css_class(class);
+            } else {
+                name.remove_css_class(class);
+            }
+        }
+    }
 }
 
 pub struct Files {
@@ -30,6 +74,8 @@ pub struct Files {
     listing: RefCell<Arc<[Entry]>>,
     pending: RefCell<String>,
     want: RefCell<Option<String>>,
+    /// Visual mode: its anchor row and the marks from before it started.
+    visual: RefCell<Option<(u32, Vec<bool>)>>,
     pub linemode: Cell<bool>,
     app: Weak<App>,
 }
@@ -81,13 +127,8 @@ impl Files {
                 return;
             };
             name.set_text(&row.label);
-            if name.has_css_class("marked") != row.marked.get() {
-                if row.marked.get() {
-                    name.add_css_class("marked");
-                } else {
-                    name.remove_css_class("marked");
-                }
-            }
+            paint(&name, &row);
+            *row.bound.borrow_mut() = Some(name.downgrade());
             if let Some(age) = line.last_child().and_downcast::<gtk::Label>() {
                 let show = weak.upgrade().is_some_and(|a| a.files.linemode.get());
                 if show {
@@ -98,6 +139,15 @@ impl Files {
                 } else {
                     age.set_text("");
                 }
+            }
+        });
+        factory.connect_unbind(|_, item| {
+            if let Some(obj) = item
+                .downcast_ref::<gtk::ListItem>()
+                .and_then(gtk::ListItem::item)
+                && let Some(row) = row(&obj)
+            {
+                row.bound.borrow_mut().take();
             }
         });
         let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
@@ -126,6 +176,7 @@ impl Files {
             folder: RefCell::new(folder),
             listing: RefCell::new(Arc::from(Vec::new())),
             pending: RefCell::new(String::new()),
+            visual: RefCell::new(None),
             want: RefCell::new((!session.cursor.is_empty()).then(|| session.cursor.clone())),
             linemode: Cell::new(false),
             app: app.clone(),
@@ -243,20 +294,11 @@ impl Files {
                 if want.as_deref() == Some(entry.name.as_str()) {
                     cursor = i;
                 }
-                let label = if entry.directory {
-                    format!("{}/", entry.name)
-                } else {
-                    entry.name.clone()
-                };
-                glib::BoxedAnyObject::new(Row {
-                    entry,
-                    label,
-                    marked: Cell::new(false),
-                })
-                .upcast()
+                glib::BoxedAnyObject::new(Row::new(entry)).upcast()
             })
             .collect();
         let had_focus = self.has_focus();
+        self.visual.borrow_mut().take();
         let removed = self.store.n_items();
         self.store.splice(0, removed, &rows);
         if !rows.is_empty() {
@@ -297,6 +339,96 @@ impl Files {
     fn place(&self, pos: u32) {
         self.selection.set_selected(pos);
         self.list.scroll_to(pos, gtk::ListScrollFlags::FOCUS, None);
+        self.extend_visual();
+    }
+
+    fn rows(&self) -> impl Iterator<Item = glib::Object> + '_ {
+        (0..self.store.n_items()).filter_map(|i| self.store.item(i))
+    }
+
+    fn set_mark(&self, pos: u32, on: bool) {
+        if let Some(obj) = self.store.item(pos)
+            && let Some(r) = row(&obj)
+            && r.marked.replace(on) != on
+        {
+            r.paint();
+        }
+    }
+
+    pub fn marked(&self) -> Vec<Entry> {
+        self.rows()
+            .filter_map(|o| row(&o).filter(|r| r.marked.get()).map(|r| r.entry.clone()))
+            .collect()
+    }
+
+    /// `Space`: toggle the row under the cursor and step down.
+    pub fn toggle_mark(&self, app: &Rc<App>) {
+        let Some(pos) = self.cursor() else { return };
+        let on = self
+            .store
+            .item(pos)
+            .and_then(|o| row(&o).map(|r| !r.marked.get()))
+            .unwrap_or(false);
+        self.set_mark(pos, on);
+        self.step(app, 1, false);
+    }
+
+    /// `v`: start visual mode at the cursor, or leave it keeping the marks.
+    pub fn visual_mode(&self, app: &Rc<App>) {
+        if self.visual.borrow_mut().take().is_some() {
+            app.status.set_mode("");
+            return;
+        }
+        let Some(anchor) = self.cursor() else { return };
+        let base = self
+            .rows()
+            .map(|o| row(&o).is_some_and(|r| r.marked.get()))
+            .collect();
+        *self.visual.borrow_mut() = Some((anchor, base));
+        app.status.set_mode("-- VISUAL --");
+        self.extend_visual();
+    }
+
+    fn extend_visual(&self) {
+        let (anchor, base) = match self.visual.borrow().as_ref() {
+            Some((a, b)) => (*a, b.clone()),
+            None => return,
+        };
+        let Some(cursor) = self.cursor() else { return };
+        let (lo, hi) = (anchor.min(cursor), anchor.max(cursor));
+        for (i, was) in base.iter().enumerate() {
+            let pos = u32::try_from(i).unwrap_or(u32::MAX);
+            self.set_mark(pos, *was || (lo..=hi).contains(&pos));
+        }
+    }
+
+    /// `Ctrl+A`.
+    pub fn mark_all(&self) {
+        for pos in 0..self.store.n_items() {
+            self.set_mark(pos, true);
+        }
+    }
+
+    /// `Ctrl+R`.
+    pub fn invert_marks(&self) {
+        for pos in 0..self.store.n_items() {
+            let on = self
+                .store
+                .item(pos)
+                .and_then(|o| row(&o).map(|r| !r.marked.get()))
+                .unwrap_or(false);
+            self.set_mark(pos, on);
+        }
+    }
+
+    /// `Esc`: leave visual mode and clear the selection.
+    pub fn clear_marks(&self, app: &Rc<App>) {
+        if self.visual.borrow_mut().take().is_some() {
+            app.status.set_mode("");
+        }
+        for pos in 0..self.store.n_items() {
+            self.set_mark(pos, false);
+        }
     }
 
     /// Move by `delta` rows; single steps wrap around.

@@ -18,6 +18,8 @@ thread_local! {
 
 /// Once per process, before the first window.
 pub fn install() {
+    // Binds GtkSourceView's translations (vim's bar text) and its resources.
+    sourceview5::init();
     let Some(display) = gtk::gdk::Display::default() else {
         return;
     };
