@@ -12,4 +12,4 @@ RUSTDOCFLAGS="${RUSTDOCFLAGS:-} -D warnings" cargo doc --no-deps -p nib-core -p 
 cargo build --release --workspace
 target/release/nib --version
 NIB_TRACE=1 cargo run --quiet --release -p nib-vault --example trace -- "${XDG_CACHE_HOME:-$HOME/.cache}/nib-fixture"
-echo 'Window smoke: skipped until Phase 5'
+scripts/agent/smoke.sh
