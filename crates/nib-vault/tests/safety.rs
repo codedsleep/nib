@@ -110,3 +110,26 @@ fn state_roundtrip_and_roots() {
         "e9671acd244849c5"
     );
 }
+#[test]
+fn opening_a_nested_note_recovers_its_stale_temp() {
+    let d = tempfile::tempdir().unwrap();
+    fs::create_dir(d.path().join("nested")).unwrap();
+    let path = d.path().join("nested/n.md");
+    let tmp = d.path().join("nested/.n.nib-tmp");
+    fs::write(&path, "old").unwrap();
+    fs::write(&tmp, "partial").unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&tmp)
+        .unwrap()
+        .set_modified(SystemTime::now() - Duration::from_secs(120))
+        .unwrap();
+    let (h, _) = nib_vault::VaultHandle::open_deferred(
+        d.path(),
+        &nib_core::settings::Config::default(),
+        Guard::confined(vec![d.path().into()]),
+    )
+    .unwrap();
+    assert_eq!(h.read_note(&path).unwrap().text, "old");
+    assert!(!tmp.exists());
+}

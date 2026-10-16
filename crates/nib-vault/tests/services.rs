@@ -141,6 +141,26 @@ fn watches_external_own_touch_and_rename() {
         .filter(|e| matches!(e, VaultEvent::NoteChanged { .. }))
         .count();
     assert!(extra <= 1);
+    fs::write(&p, "own\n").unwrap();
+    assert_eq!(
+        until(&rx, |e| if let VaultEvent::NoteChanged { text, .. } = e {
+            Some(text)
+        } else {
+            None
+        }),
+        "own\n"
+    );
+    let temporary = d.path().join(".external-swap");
+    fs::write(&temporary, "atomic save\n").unwrap();
+    fs::rename(&temporary, &p).unwrap();
+    assert_eq!(
+        until(&rx, |e| if let VaultEvent::NoteChanged { text, .. } = e {
+            Some(text)
+        } else {
+            None
+        }),
+        "atomic save\n"
+    );
     let to = d.path().join("renamed.md");
     fs::rename(&p, &to).unwrap();
     let (from, new) = until(&rx, |e| {
@@ -408,4 +428,58 @@ fn subprocess_trash_entry() {
     )
     .unwrap();
     assert!(!vault.join("a.md").exists());
+}
+#[test]
+fn attachment_updates_and_empty_matcher() {
+    let d = tempfile::tempdir().unwrap();
+    let (h, rx) = open(d.path());
+    watch(&h);
+    fs::write(d.path().join("image.png"), b"test image").unwrap();
+    until(&rx, |e| {
+        matches!(e,VaultEvent::Index(IndexEvent::AttachmentUpsert(ref p))if p=="image.png")
+            .then_some(())
+    });
+    fs::rename(d.path().join("image.png"), d.path().join("renamed.png")).unwrap();
+    until(&rx, |e| {
+        matches!(e,VaultEvent::Index(IndexEvent::AttachmentUpsert(ref p))if p=="renamed.png")
+            .then_some(())
+    });
+    fs::remove_file(d.path().join("renamed.png")).unwrap();
+    until(&rx, |e| {
+        matches!(e,VaultEvent::Index(IndexEvent::AttachmentRemove(ref p))if p=="renamed.png")
+            .then_some(())
+    });
+    let matcher = fuzzy::Matcher::new([]).unwrap();
+    let query = matcher.set_query("missing");
+    let events = matcher.events();
+    let start = Instant::now();
+    loop {
+        if let Ok(s) = events.try_recv()
+            && s.query == query
+            && !s.running
+        {
+            assert_eq!(s.matched, 0);
+            break;
+        }
+        assert!(start.elapsed() < Duration::from_secs(2));
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+#[test]
+fn deferred_start_reads_only_the_opened_note() {
+    let d = tempfile::tempdir().unwrap();
+    fs::write(d.path().join("a.md"), "# A").unwrap();
+    let (h, rx) = VaultHandle::open_deferred(
+        d.path(),
+        &Config::default(),
+        Guard::confined(vec![d.path().into()]),
+    )
+    .unwrap();
+    assert!(!h.watcher_ready());
+    assert_eq!(h.listing_reads(), 0);
+    assert_eq!(h.read_note(&d.path().join("a.md")).unwrap().text, "# A");
+    assert!(rx.try_recv().is_err());
+    h.start_watching().unwrap();
+    watch(&h);
+    h.start_watching().unwrap();
 }
