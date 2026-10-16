@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nib's default editor and reading-view colours: the Nord palette.
+     The reading view takes text, def:heading, def:emphasis, def:string,
+     def:comment and def:link-text from whichever scheme is active. -->
+<style-scheme id="nib-nord" name="nib Nord" version="1.0">
+  <author>nib</author>
+  <description>Nord palette for nib</description>
+
+  <color name="nord0" value="#2E3440"/>
+  <color name="nord1" value="#3B4252"/>
+  <color name="nord2" value="#434C5E"/>
+  <color name="nord3" value="#4C566A"/>
+  <color name="dim" value="#7B88A1"/>
+  <color name="nord4" value="#D8DEE9"/>
+  <color name="nord5" value="#E5E9F0"/>
+  <color name="nord6" value="#ECEFF4"/>
+  <color name="nord7" value="#8FBCBB"/>
+  <color name="nord8" value="#88C0D0"/>
+  <color name="nord9" value="#81A1C1"/>
+  <color name="nord10" value="#5E81AC"/>
+  <color name="nord11" value="#BF616A"/>
+  <color name="nord12" value="#D08770"/>
+  <color name="nord13" value="#EBCB8B"/>
+  <color name="nord14" value="#A3BE8C"/>
+  <color name="nord15" value="#B48EAD"/>
+
+  <style name="text" foreground="nord4" background="nord0"/>
+  <style name="selection" foreground="nord6" background="nord3"/>
+  <style name="selection-unfocused" background="nord2"/>
+  <style name="cursor" foreground="nord6"/>
+  <style name="current-line" background="nord1"/>
+  <style name="current-line-number" foreground="nord4" background="nord1"/>
+  <style name="line-numbers" foreground="nord3" background="nord0"/>
+  <style name="right-margin" foreground="nord3" background="nord1"/>
+  <style name="bracket-match" foreground="nord6" background="nord3" bold="true"/>
+  <style name="bracket-mismatch" foreground="nord11" underline="error"/>
+  <style name="search-match" foreground="nord0" background="nord13"/>
+  <style name="draw-spaces" foreground="nord2"/>
+
+  <style name="def:heading" foreground="nord8" bold="true"/>
+  <style name="def:emphasis" foreground="nord15" italic="true"/>
+  <style name="def:strong-emphasis" foreground="nord6" bold="true"/>
+  <style name="def:string" foreground="nord14"/>
+  <style name="def:inline-code" foreground="nord14"/>
+  <style name="def:preformatted-section" foreground="nord14"/>
+  <style name="def:comment" foreground="dim" italic="true"/>
+  <style name="def:shebang" foreground="dim"/>
+  <style name="def:link-text" foreground="nord9"/>
+  <style name="def:link-destination" foreground="nord10" underline="single"/>
+  <style name="def:link-symbol" foreground="nord9" bold="true"/>
+  <style name="def:list-marker" foreground="nord13" bold="true"/>
+  <style name="def:thematic-break" foreground="nord3" bold="true"/>
+  <style name="def:preprocessor" foreground="nord12"/>
+  <style name="def:constant" foreground="nord15"/>
+  <style name="def:special-char" foreground="nord13"/>
+  <style name="def:keyword" foreground="nord9" bold="true"/>
+  <style name="def:type" foreground="nord7"/>
+  <style name="def:identifier" foreground="nord8"/>
+  <style name="def:number" foreground="nord15"/>
+  <style name="def:note" foreground="nord13" bold="true"/>
+  <style name="def:error" foreground="nord11" underline="error"/>
+</style-scheme>

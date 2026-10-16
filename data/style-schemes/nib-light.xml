@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- nib's light editor and reading-view colours (Nord's snow storm with its
+     frost and aurora accents darkened for contrast on white). -->
+<style-scheme id="nib-light" name="nib Light" version="1.0">
+  <author>nib</author>
+  <description>Light palette for nib</description>
+
+  <color name="paper" value="#FAFBFC"/>
+  <color name="line" value="#ECEFF4"/>
+  <color name="rule" value="#D8DEE9"/>
+  <color name="dim" value="#6B7589"/>
+  <color name="ink" value="#2E3440"/>
+  <color name="ink-strong" value="#1E222A"/>
+  <color name="blue" value="#3B6EA8"/>
+  <color name="teal" value="#2F7F86"/>
+  <color name="red" value="#A3404A"/>
+  <color name="orange" value="#A85C2C"/>
+  <color name="yellow" value="#8A6A10"/>
+  <color name="green" value="#4F7A2E"/>
+  <color name="purple" value="#7E5A8C"/>
+
+  <style name="text" foreground="ink" background="paper"/>
+  <style name="selection" foreground="ink-strong" background="rule"/>
+  <style name="selection-unfocused" background="line"/>
+  <style name="cursor" foreground="ink"/>
+  <style name="current-line" background="line"/>
+  <style name="current-line-number" foreground="ink" background="line"/>
+  <style name="line-numbers" foreground="dim" background="paper"/>
+  <style name="right-margin" foreground="rule" background="line"/>
+  <style name="bracket-match" foreground="ink-strong" background="rule" bold="true"/>
+  <style name="bracket-mismatch" foreground="red" underline="error"/>
+  <style name="search-match" foreground="ink-strong" background="#F2DC9B"/>
+  <style name="draw-spaces" foreground="rule"/>
+
+  <style name="def:heading" foreground="blue" bold="true"/>
+  <style name="def:emphasis" foreground="purple" italic="true"/>
+  <style name="def:strong-emphasis" foreground="ink-strong" bold="true"/>
+  <style name="def:string" foreground="green"/>
+  <style name="def:inline-code" foreground="green"/>
+  <style name="def:preformatted-section" foreground="green"/>
+  <style name="def:comment" foreground="dim" italic="true"/>
+  <style name="def:shebang" foreground="dim"/>
+  <style name="def:link-text" foreground="blue"/>
+  <style name="def:link-destination" foreground="teal" underline="single"/>
+  <style name="def:link-symbol" foreground="blue" bold="true"/>
+  <style name="def:list-marker" foreground="orange" bold="true"/>
+  <style name="def:thematic-break" foreground="dim" bold="true"/>
+  <style name="def:preprocessor" foreground="orange"/>
+  <style name="def:constant" foreground="purple"/>
+  <style name="def:special-char" foreground="yellow"/>
+  <style name="def:keyword" foreground="blue" bold="true"/>
+  <style name="def:type" foreground="teal"/>
+  <style name="def:identifier" foreground="teal"/>
+  <style name="def:number" foreground="purple"/>
+  <style name="def:note" foreground="yellow" bold="true"/>
+  <style name="def:error" foreground="red" underline="error"/>
+</style-scheme>
