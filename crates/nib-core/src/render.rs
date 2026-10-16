@@ -4,7 +4,7 @@ use crate::{
     parse::{line_starts, location, options},
 };
 use pulldown_cmark::{CodeBlockKind, Event, LinkType, Parser, Tag, TagEnd};
-use std::{ops::Range, sync::Arc};
+use std::{borrow::Cow, ops::Range, sync::Arc};
 const INDENTS: [&str; 32] = [
     "indent-0",
     "indent-1",
@@ -43,6 +43,10 @@ const INDENTS: [&str; 32] = [
 pub trait RenderCtx {
     /// Resolve a destination relative to the currently rendered note.
     fn resolve(&self, raw: &str) -> LinkTarget;
+    /// Resolve a `CommonMark` destination relative to the linking note's folder.
+    fn resolve_markdown(&self, raw: &str) -> LinkTarget {
+        self.resolve(raw)
+    }
     /// Supply already loaded note Markdown for a one-level embed.
     fn embed(&self, _raw: &str) -> Option<String> {
         None
@@ -141,7 +145,7 @@ impl std::fmt::Debug for Styles {
 }
 /// Non-text content to attach to a GTK text buffer.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Anchor {
+pub enum Anchor<'a> {
     /// Vault-local image. Remote URLs are rendered as text instead.
     Image {
         /// Relative path.
@@ -154,7 +158,7 @@ pub enum Anchor {
         /// Original destination.
         target: String,
         /// Child operations, depth limited to one.
-        ops: Vec<Op>,
+        ops: Vec<Op<'static>>,
     },
     /// Clickable task glyph; source line is on the enclosing operation.
     Task(bool),
@@ -163,18 +167,18 @@ pub enum Anchor {
     /// Opaque frontmatter expander.
     Frontmatter {
         /// Original block.
-        raw: String,
+        raw: Cow<'a, str>,
         /// Number of properties.
         properties: usize,
     },
 }
 /// One insertion or child anchor, carrying one-based source lines.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Op {
+pub enum Op<'a> {
     /// Styled text run.
     Text {
         /// Text to insert.
-        text: String,
+        text: Cow<'a, str>,
         /// Semantic tag names, outermost first.
         tags: Styles,
         /// One-based half-open line range.
@@ -185,7 +189,7 @@ pub enum Op {
     /// Widget anchor.
     Anchor {
         /// Child kind.
-        kind: Anchor,
+        kind: Anchor<'a>,
         /// Source line range.
         lines: Range<u32>,
     },
@@ -195,7 +199,37 @@ pub enum Op {
         lines: Range<u32>,
     },
 }
-impl Op {
+impl Op<'_> {
+    /// Own all text for a worker handoff or a retained operation cache.
+    pub fn into_owned(self) -> Op<'static> {
+        match self {
+            Op::Text {
+                text,
+                tags,
+                lines,
+                link,
+            } => Op::Text {
+                text: Cow::Owned(text.into_owned()),
+                tags,
+                lines,
+                link,
+            },
+            Op::Newline { lines } => Op::Newline { lines },
+            Op::Anchor { kind, lines } => Op::Anchor {
+                lines,
+                kind: match kind {
+                    Anchor::Frontmatter { raw, properties } => Anchor::Frontmatter {
+                        raw: Cow::Owned(raw.into_owned()),
+                        properties,
+                    },
+                    Anchor::Image { path, width } => Anchor::Image { path, width },
+                    Anchor::Embed { target, ops } => Anchor::Embed { target, ops },
+                    Anchor::Task(done) => Anchor::Task(done),
+                    Anchor::Rule => Anchor::Rule,
+                },
+            },
+        }
+    }
     /// Source range shared by all operation types.
     pub fn lines(&self) -> &Range<u32> {
         match self {
@@ -205,9 +239,15 @@ impl Op {
         }
     }
 }
-fn push(
-    out: &mut Vec<Op>,
-    text: impl Into<String>,
+fn text_value(text: pulldown_cmark::CowStr<'_>) -> Cow<'_, str> {
+    match text {
+        pulldown_cmark::CowStr::Borrowed(text) => Cow::Borrowed(text),
+        text => Cow::Owned(text.into_string()),
+    }
+}
+fn push<'a>(
+    out: &mut Vec<Op<'a>>,
+    text: impl Into<Cow<'a, str>>,
     tags: Styles,
     lines: Range<u32>,
     link: Option<Arc<LinkTarget>>,
@@ -222,17 +262,17 @@ fn push(
         });
     }
 }
-fn newline(out: &mut Vec<Op>, lines: Range<u32>) {
+fn newline(out: &mut Vec<Op<'_>>, lines: Range<u32>) {
     if !matches!(out.last(), Some(Op::Newline { .. })) {
         out.push(Op::Newline { lines });
     }
 }
 /// Build reading operations with source ranges and no widget allocations.
-pub fn render(md: &str, ctx: &dyn RenderCtx) -> Vec<Op> {
+pub fn render<'a>(md: &'a str, ctx: &dyn RenderCtx) -> Vec<Op<'a>> {
     render_depth(md, ctx, 0)
 }
 #[allow(clippy::too_many_lines)] // One exhaustive parser-event dispatch keeps rendering and source mapping together.
-fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
+fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> {
     let starts = line_starts(md);
     let mut out = Vec::with_capacity(starts.len().saturating_mul(8));
     let fm = frontmatter::parse(md);
@@ -322,7 +362,11 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 let hint = source
                     .split_once('|')
                     .and_then(|(_, h)| h.trim_end_matches(']').parse().ok());
-                let target = ctx.resolve(&dest_url);
+                let target = if wiki {
+                    ctx.resolve(&dest_url)
+                } else {
+                    ctx.resolve_markdown(&dest_url)
+                };
                 match target {
                     LinkTarget::Attachment(ref path) if !crate::links::has_scheme(path) => out
                         .push(Op::Anchor {
@@ -347,7 +391,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                             out.push(Op::Anchor {
                                 kind: Anchor::Embed {
                                     target: dest_url.to_string(),
-                                    ops: child,
+                                    ops: child.into_iter().map(Op::into_owned).collect(),
                                 },
                                 lines: lines.clone(),
                             });
@@ -432,8 +476,16 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                         );
                         push(&mut out, marker, tags, lines.clone(), None);
                     }
-                    Tag::Link { dest_url, .. } => {
-                        let target = ctx.resolve(&dest_url);
+                    Tag::Link {
+                        dest_url,
+                        link_type,
+                        ..
+                    } => {
+                        let target = if matches!(link_type, LinkType::WikiLink { .. }) {
+                            ctx.resolve(&dest_url)
+                        } else {
+                            ctx.resolve_markdown(&dest_url)
+                        };
                         tags.insert(if matches!(target, LinkTarget::Unresolved(_)) {
                             "unresolved-link"
                         } else {
@@ -444,7 +496,15 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     Tag::FootnoteDefinition(name) => {
                         footnote_start = Some(out.len());
                         tags.insert("footnote-definition");
-                        push(&mut out, format!("[{name}] "), tags, lines.clone(), None);
+                        let number = footnotes
+                            .iter()
+                            .position(|s| s == name.as_ref())
+                            .unwrap_or_else(|| {
+                                footnotes.push(name.to_string());
+                                footnotes.len() - 1
+                            })
+                            + 1;
+                        push(&mut out, format!("[{number}] "), tags, lines.clone(), None);
                     }
                     Tag::Table(_) => table = Some(Vec::new()),
                     Tag::TableHead | Tag::TableRow => row.clear(),
@@ -527,7 +587,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     } else {
                         push(
                             &mut out,
-                            t.into_string(),
+                            text_value(t),
                             tags,
                             lines,
                             destinations.last().cloned(),
@@ -536,7 +596,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 } else {
                     push(
                         &mut out,
-                        t.into_string(),
+                        text_value(t),
                         tags,
                         lines,
                         destinations.last().cloned(),
@@ -551,7 +611,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     code_tags.insert("code");
                     push(
                         &mut out,
-                        t.into_string(),
+                        text_value(t),
                         code_tags,
                         lines,
                         destinations.last().cloned(),
@@ -585,7 +645,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 );
             }
             Event::Html(t) | Event::InlineHtml(t) => {
-                push(&mut out, t.into_string(), tags, lines, None);
+                push(&mut out, text_value(t), tags, lines, None);
             }
             _ => {}
         }
@@ -594,10 +654,15 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
     out
 }
 /// Render one heading and its descendants, ending at the next peer heading.
-pub fn render_section(md: &str, heading_slug: &str, ctx: &dyn RenderCtx) -> Vec<Op> {
+pub fn render_section<'a>(md: &'a str, heading_slug: &str, ctx: &dyn RenderCtx) -> Vec<Op<'a>> {
     render_section_depth(md, heading_slug, ctx, 0)
 }
-fn render_section_depth(md: &str, slug: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
+fn render_section_depth<'a>(
+    md: &'a str,
+    slug: &str,
+    ctx: &dyn RenderCtx,
+    depth: u8,
+) -> Vec<Op<'a>> {
     let headings = crate::edit::outline(md);
     let Some(h) = headings.iter().find(|h| h.slug == slug) else {
         return vec![];
@@ -612,7 +677,7 @@ fn render_section_depth(md: &str, slug: &str, ctx: &dyn RenderCtx, depth: u8) ->
         .collect()
 }
 /// Stable plain snapshot including anchors and semantic tags.
-pub fn snapshot(ops: &[Op]) -> String {
+pub fn snapshot(ops: &[Op<'_>]) -> String {
     use std::fmt::Write;
     let mut out = String::new();
     for op in ops {

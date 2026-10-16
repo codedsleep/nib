@@ -6,6 +6,6 @@ TEXT [] "Footnote"
 TEXT ["footnote"] "1"
 TEXT [] "."
 NEWLINE
-TEXT ["footnote-definition"] "[a] "
+TEXT ["footnote-definition"] "[1] "
 TEXT ["footnote-definition"] "definition"
 NEWLINE

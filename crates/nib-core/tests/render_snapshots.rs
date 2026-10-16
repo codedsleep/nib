@@ -44,7 +44,10 @@ fn elements() {
             "![[image.png|300]]\n![[Note]]\n![[Note#Inner]]\n![remote](https://example.com/x.png)\n",
         ),
     ] {
-        let result = render::snapshot(&render::render(input, &Context));
+        let ops = render::render(input, &Context);
+        let result = render::snapshot(&ops);
+        let owned: Vec<_> = ops.into_iter().map(render::Op::into_owned).collect();
+        assert_eq!(render::snapshot(&owned), result);
         let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join(format!("tests/snapshots/{name}.txt"));
         if std::env::var_os("UPDATE_SNAPSHOTS").is_some() {
