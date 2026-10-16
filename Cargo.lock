@@ -841,7 +841,7 @@ checksum = "743fb55ba31b18fb1ecef6bdc9aa2743314978ac084044301a7eee33fb99a20d"
 
 [[package]]
 name = "nib"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -861,7 +861,7 @@ dependencies = [
 
 [[package]]
 name = "nib-core"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "chrono",
  "memchr",
@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "nib-vault"
-version = "0.1.0-dev"
+version = "0.1.0"
 dependencies = [
  "async-channel",
  "chrono",
