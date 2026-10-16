@@ -1,28 +1,265 @@
 # nib
 
-A minimal, keyboard-first Markdown notes app for Linux, Rust, GTK 4 and
-GtkSourceView 5. Opens an Obsidian vault unchanged. Development follows
-[the scope](.planning/SCOPE.md); the GTK window arrives in Goal B.
+A keyboard-first Markdown notes app for Linux, built with Rust, GTK 4 and
+GtkSourceView 5. Open an Obsidian vault unchanged: write with vim motions,
+follow wikilinks, and find notes without leaving the keyboard.
 
-Goal A is complete through Phase 4. See [HANDOFF-A.md](HANDOFF-A.md) for the
-backend API, event wiring, measured budgets and remaining frontend work.
+- Trek-style files column with selection, copy/cut/paste, XDG trash and link-aware renames.
+- Wikilink and tag completion, backlinks, outline, fuzzy switcher and streamed vault search.
+- Source, reading and split views; local images, callouts, task toggles and note embeds.
+- Daily notes, templates, pasted screenshots, file attachments, tabs and per-vault sessions.
+- Atomic saves that retain BOM and line endings, read-only previews for non-UTF-8 files,
+  and external-change notices that protect modified buffers.
 
-Requires Rust 1.92+, GTK 4.14+ and GtkSourceView 5.10+.
+## Install
+
+Requires Linux x86_64, GTK 4.14+, GtkSourceView 5.10+, and an authenticated
+[GitHub CLI](https://cli.github.com/) with access to this private repository.
+Release binaries are built on Ubuntu 24.04. Fedora runtime dependencies:
 
 ```sh
-scripts/check.sh                 # format, clippy, tests, boundaries, release stub
-scripts/mkfixture.sh --seed 7     # isolated, deterministic test vault
-scripts/dev-run.sh               # confined development entry point
-cargo run -p nib -- --help
+sudo dnf install gtk4 gtksourceview5 gh
+gh auth login
+gh api repos/codedsleep/markdown-trekfm-rust/contents/install.sh \
+  --jq .content | base64 --decode > /tmp/nib-install.sh
+bash /tmp/nib-install.sh -y --version v0.1.0
 ```
 
-Goal A provides the pure Markdown/editor algorithms and vault services: guarded
-atomic saves, cached listing, parallel indexing, watched changes, streamed search
-and matching, file operations and theme discovery. To measure a generated fixture:
+The installer downloads the release using `gh release download`, verifies its
+SHA256SUMS entry, and installs the binary, desktop file, icon, man page and
+style schemes into `~/.local`. Add `~/.local/bin` to PATH. Use `--prefix /ABS/DIR`
+for another location or `--uninstall -y` to remove installed files while keeping
+config, sessions and notes. Without `--version`, the latest release is used.
+Noninteractive installation requires `-y`.
+
+Releases currently contain x86_64 only. GitHub's ARM runners for private
+repositories consume billed/included Actions minutes; there is no unconditional
+free ARM runner, so ARM users build from source.
 
 ```sh
+sudo dnf install gcc pkgconf-pkg-config gtk4-devel gtksourceview5-devel scdoc
+# Install Rust 1.92+ first, then in this checkout:
+scripts/install.sh -y            # build and install locally
+scripts/install.sh -y --uninstall
+```
+
+## Use
+
+```sh
+nib                             # last vault; folder chooser on first run
+nib /path/to/vault
+nib /path/to/vault/note.md        # forwards to the running instance
+nib /path/to/vault/subfolder
+nib --vault /path/to/vault --new 'A note'
+nib --vault /path/to/vault --daily
+nib --profile work /path/to/another/vault
+nib --help
+```
+
+Hyprland binding: `bind = $mainMod, N, exec, nib`.
+
+Edit configuration using `:config` (or the Alt+P palette). It is created at
+`~/.config/nib/nib.toml`, or `~/.config/nib/PROFILE/nib.toml`. Fonts, scheme,
+wrap, margins, vim and autosave apply on save; vault folders apply at next open.
+Sessions and crash logs live under `~/.local/state/nib`, with separate profiles.
+XDG_CONFIG_HOME and XDG_STATE_HOME override those locations.
+
+`NIB_LOG=debug|info|warn|error|off` controls logging; `NIB_TRACE=1` prints timings.
+`NIB_GTK_THEME` overrides the theme used for GTK 3 palette carry-over;
+`GTK_THEME=Adwaita:light` selects a light GTK theme.
+`NIB_ALLOW_ROOTS` enables write confinement when set, including when empty;
+normal installed use leaves it unset. See `man nib` for details.
+
+## Coming from Obsidian
+
+Choose the existing vault folder. nib uses plain Markdown, shortest unique
+wikilinks, frontmatter titles/aliases/tags, and the existing daily/templates/
+attachments folders. It ignores `.obsidian/`, `.trash/`, `.git/` and `.nib/`;
+settings and session files stay outside the vault. It does not sync or execute
+plugins, fetch remote images, run templates, or launch executable attachments.
+External links open only for HTTP, HTTPS and mailto.
+
+Rename asks before rewriting references and keeps aliases and heading fragments.
+Delete moves to XDG trash and refuses if trash is unavailable. An external edit
+reloads an unmodified buffer; a modified buffer shows a notice and waits for
+`:e!` (reload and discard edits) or `:w` (explicitly overwrite). Back up your vault
+and review changes during the first week of use.
+
+Templates support `{{date}}`, `{{time}}`, `{{title}}` and `{{date:FORMAT}}`.
+Daily notes default to `daily/YYYY-MM-DD.md`. Ctrl+V pastes a screenshot only
+in insert mode or with vim off; `:paste-image` works in any mode.
+
+## Vim
+
+GtkSourceView's VimIMContext provides modes, motions, text objects, registers,
+search and undo. nib owns its documented `:` commands. `:map` and `gf` are
+unsupported; substitution (`:s/a/b/`) was unreliable with GtkSourceView 5.20.
+Insert sessions form a single undo action. Set `editor.vim = false` for ordinary
+editing; every nib action remains available through Alt+P or a chord.
+
+Enter continues lists; Tab/Shift+Tab indent them. Finder Shift+Enter opens a
+new tab. Reading mode supports `j k gg G Ctrl+D Ctrl+U`, Tab/Enter for links,
+and `i` to return to source.
+
+## Keys
+
+Generated from the application registry by `scripts/generate-docs.py`. F1 shows
+and filters the same actions in the app. Files-column keys apply in that column.
+
+<!-- registry:start -->
+
+### Window and editor
+
+| Keys | Commands | Action |
+|---|---|---|
+| `Ctrl+S` | `:w`, `:w!`, `:write` | Save note |
+| `Ctrl+Q` | `:qa`, `:qa!`, `:qall` | Quit |
+| `Alt+T` | `:tabnew` | New tab |
+| `Alt+W` | — | Close the tab |
+| `Alt+[` | — | Previous tab |
+| `Alt+]` | — | Next tab |
+| `Alt+Left` | — | Back to the tab's previous note |
+| `Alt+Right` | — | Forward to the tab's next note |
+| `Alt+D` | `:daily` | Today's daily note |
+| `Alt+N` | `:new` | New note |
+| `Alt+Shift+T` | `:template` | Insert a template |
+| `Alt+O` | `:o`, `:open` | Open a note (quick switcher) |
+| `Alt+P` | — | Command palette |
+| `Alt+F` | `:find` | Search the vault |
+| `Alt+Enter` | `:follow` | Follow the link under the cursor |
+| `Ctrl+Enter` | `:check` | Toggle the task checkbox |
+| `Ctrl+Space` | — | Complete the link or tag at the cursor |
+| `Ctrl+Shift+Up` | — | Promote the heading |
+| `Ctrl+Shift+Down` | — | Demote the heading |
+| `Alt+E` | `:read` | Reading view (toggle) |
+| `Alt+Shift+E` | `:split` | Source and reading side by side |
+| `F9` | `:files` | Show or hide the files column |
+| `F8` | — | Show or hide the right panel |
+| `F7` | — | Show or hide the parent column |
+| `Alt+B` | `:backlinks` | Focus the backlinks |
+| `F11` | — | Fullscreen |
+| `F5` | — | Reload the folder listing from disk |
+| `F1` | `:help` | List every key and command |
+| `Alt+1` | — | Focus the files column |
+| `Alt+2` | — | Focus the editor |
+| `Alt+3` | — | Focus the right panel |
+
+### Files column
+
+| Keys | Commands | Action |
+|---|---|---|
+| `j`, `<Down>` | — | Cursor down |
+| `k`, `<Up>` | — | Cursor up |
+| `gg`, `<Home>` | — | First entry |
+| `G`, `<End>` | — | Last entry |
+| `<C-d>` | — | Half a page down |
+| `<C-u>` | — | Half a page up |
+| `<C-f>`, `<PageDown>` | — | A page down |
+| `<C-b>`, `<PageUp>` | — | A page up |
+| `h`, `<Left>`, `<BS>` | — | Parent folder |
+| `l`, `<CR>`, `o`, `<Right>` | — | Enter the folder or open the file |
+| `O` | — | Open in a new tab |
+| `H` | — | Previous folder |
+| `L` | — | Next folder |
+| `<Space>` | — | Select or unselect, then step down |
+| `v` | — | Visual selection mode |
+| `<C-a>` | — | Select everything |
+| `<C-r>` | — | Invert the selection |
+| `<Esc>` | — | Clear the selection and the filter |
+| `y` | — | Yank (copy) to the clipboard |
+| `x` | — | Cut to the clipboard |
+| `p` | — | Paste here |
+| `P` | — | Paste here, replacing existing names |
+| `Y` | — | Forget the yank |
+| `d` | — | Move to the trash |
+| `a` | — | Create a note (name/ for a folder) |
+| `r` | — | Rename (rewriting links) |
+| `/` | — | Find in the list |
+| `?` | — | Find backwards |
+| `n` | — | Next match |
+| `N` | — | Previous match |
+| `f` | — | Filter the list |
+| `z` | — | Fuzzy-find below this folder |
+| `.` | — | Show or hide hidden files |
+| `,n` | — | Sort by name |
+| `,m` | — | Sort by modified time, showing ages |
+| `,r` | — | Reverse the order |
+| `cp` | — | Copy the absolute path |
+| `cn` | — | Copy the name |
+| `cl` | — | Copy a [[wikilink]] |
+| `cr` | — | Copy the vault-relative path |
+| `gh` | — | Go to the vault root |
+| `gd` | — | Go to the daily folder |
+| `ga` | — | Go to the attachments folder |
+| `gt` | — | Go to the templates folder |
+| `gr` | — | Recent notes |
+| `~` | — | List every key and command |
+| `<Tab>` | — | Focus the editor |
+
+### Commands and palette
+
+| Keys | Commands | Action |
+|---|---|---|
+| — | `:wq`, `:x` | Save and close the tab |
+| — | `:q`, `:quit` | Close the tab |
+| — | `:q!` | Close the tab, dropping changes |
+| — | `:e` | Open a note by name |
+| — | `:e!` | Reload the note from disk, dropping changes |
+| — | `:rename` | Rename (rewriting links) |
+| — | `:trash` | Move to the trash |
+| — | `:tab` | Tab N, new, close, next or prev |
+| — | `:goto` | Go to a line |
+| — | `:paste-image` | Paste an image as an attachment |
+| — | `:attach` | Attach files |
+| — | `:config` | Edit nib.toml |
+| — | `:reindex` | Index the vault again |
+| — | `:tag` | Notes by tag |
+| — | `:edit` | Back to the source (:edit NOTE opens one) |
+| — | `:outline` | Focus the outline |
+| — | `:version` | Show nib's version |
+
+<!-- registry:end -->
+
+## Performance
+
+Release builds, warm caches, deterministic 3,058-note / 40.2 MB fixture.
+Workstation figures are development measurements; the Thinkpad is the target
+machine. ThinkPad measurements are pending its GTK/GtkSourceView/cage setup.
+
+| Metric | Thinkpad budget | Workstation measured |
+|---|---|---|
+| Parse 5 KB note | 100 µs | 13.6 µs median / 19.2 µs p99 |
+| Completion key path | 50 µs | 7.3 µs median / 17.6 µs p95 |
+| Index 3,058 / 30,058 notes | 400 ms / 4 s | 101 ms / 418 ms |
+| Search first rows visible | 100 ms | 4.0 ms median |
+| Switcher visible / ranked rows | 30 ms / 10 ms | 8.4 ms / 5.9 ms median |
+| Start to window mapped | 150 ms | 163 ms warm; misses 90 ms workstation target |
+| Open 10,000-line note, first paint | 16 ms | 7–9 ms |
+| Reading view, first part / whole note | 50 ms | 4.4–7.1 ms / about 76 ms |
+| Files column, 20,000 entries | 60 fps | 7.9 ms worst frame |
+| Idle RSS, three tabs | 90 MB | pending final trace |
+
+The workstation startup miss is mainly GTK Vulkan initialization (about 110 ms,
+RTX 4090 plus llvmpipe ICDs); nib leaves renderer selection to GTK. Large reading
+views render the first 64 KB promptly and finish in idle slices; the full-note
+latency exceeds the original synchronous-render budget. See
+[scope and measurements](.planning/SCOPE.md) for methods and exceptions.
+
+## Development
+
+```sh
+scripts/mkfixture.sh --seed 7
+scripts/dev-run.sh                   # isolated XDG dirs, confined fixture
+scripts/check.sh                     # fmt, clippy, tests, docs, release, trace, smoke
+scripts/agent/checks/run-all.sh NAME  # selected headless checks
+scripts/agent/checks/run-all.sh --all # full UI suite, explicitly requested for release
 NIB_ALLOW_ROOTS= cargo run --release -p nib-vault --example trace -- ~/.cache/nib-fixture
+python3 scripts/generate-docs.py     # regenerate README keys and man-page source
 ```
 
-Before Phase 5 the binary supports `--help` and `--version`; other invocations
-exit with status 2. Development and tests never use the live notes vault.
+Agents and development runs use fixtures. Phase 10 alone may copy the notes vault
+into an isolated acceptance directory; the live vault is never edited or watched.
+Pure logic lives in nib-core; I/O and workers in nib-vault; GTK widgets in nib.
+See [SCOPE](.planning/SCOPE.md), [Goal A](HANDOFF-A.md) and [Goal B](HANDOFF-B.md).
+
+MIT licensed.
