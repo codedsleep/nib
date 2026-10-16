@@ -1,0 +1,8 @@
+ANCHOR Image { path: "image.png", width: Some(300) }
+NEWLINE
+ANCHOR Embed { target: "Note", ops: [Text { text: "Inner", tags: ["h1"], lines: 1..2, link: None }, Newline { lines: 1..2 }, Text { text: "Note", tags: ["link"], lines: 2..3, link: Some(Note { id: NoteId("Note"), heading: None, block: None }) }, Newline { lines: 2..3 }] }
+NEWLINE
+ANCHOR Embed { target: "Note#Inner", ops: [Text { text: "Inner", tags: ["h1"], lines: 1..2, link: None }, Newline { lines: 1..2 }, Text { text: "Note", tags: ["link"], lines: 2..3, link: Some(Note { id: NoteId("Note"), heading: None, block: None }) }, Newline { lines: 2..3 }] }
+NEWLINE
+TEXT ["link"] "https://example.com/x.png"
+NEWLINE

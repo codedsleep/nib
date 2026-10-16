@@ -1,0 +1,11 @@
+TEXT ["table"] "A   │ Longer"
+NEWLINE
+TEXT ["table"] "abc │ z     "
+NEWLINE
+TEXT [] "Footnote"
+TEXT ["footnote"] "1"
+TEXT [] "."
+NEWLINE
+TEXT ["footnote-definition"] "[a] "
+TEXT ["footnote-definition"] "definition"
+NEWLINE

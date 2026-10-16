@@ -1,0 +1,18 @@
+TEXT ["h1"] "Heading"
+NEWLINE
+TEXT ["h2"] "Sub"
+NEWLINE
+TEXT ["em"] "em"
+TEXT [] " "
+TEXT ["strong"] "strong"
+TEXT [] " "
+TEXT ["strike"] "strike"
+TEXT [] " "
+TEXT ["code"] "code"
+TEXT [] " "
+TEXT ["link"] "alias"
+TEXT [] " "
+TEXT ["unresolved-link"] "Missing"
+TEXT [] " "
+TEXT ["link"] "web"
+NEWLINE

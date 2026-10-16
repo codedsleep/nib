@@ -1,0 +1,30 @@
+ANCHOR Frontmatter { raw: "---\ntitle: Hi\ntags: [tag]\nopaque: yes\n---\n", properties: 3 }
+TEXT ["quote", "callout-title"] "note Title"
+NEWLINE
+TEXT ["quote"] "Quote"
+NEWLINE
+TEXT ["indent-0"] "• "
+TEXT ["indent-0"] "first"
+TEXT ["indent-0", "indent-1"] "◦ "
+TEXT ["indent-0", "indent-1"] "second"
+TEXT ["indent-0", "indent-1", "indent-2"] "▪ "
+TEXT ["indent-0", "indent-1", "indent-2"] "third"
+NEWLINE
+TEXT ["indent-0"] "1. "
+TEXT ["indent-0"] "ordered"
+NEWLINE
+TEXT ["indent-0"] "2. "
+TEXT ["indent-0"] "next"
+NEWLINE
+TEXT ["indent-0"] "• "
+ANCHOR Task(false)
+TEXT ["indent-0"] "todo"
+NEWLINE
+TEXT ["indent-0"] "• "
+ANCHOR Task(true)
+TEXT ["indent-0"] "done"
+NEWLINE
+ANCHOR Rule
+TEXT ["code-language"] "rust\n"
+TEXT ["codeblock"] "fn main() {}\n"
+NEWLINE
