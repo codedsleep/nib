@@ -242,6 +242,7 @@ fn execute(
             if let Some(to) = destination(inner, id, to.clone(), &mut answer, rx)? {
                 fsx::move_entry(&inner.guard, from, &to)?;
                 notify_move(inner, from, &to);
+                summary.created.push(to);
                 summary.files = 1;
             }
         }

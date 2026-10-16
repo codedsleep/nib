@@ -18,6 +18,7 @@ pub enum Pending {
         from: PathBuf,
         to: PathBuf,
         plan: Vec<Edit>,
+        replan: Option<Box<nib_core::Index>>,
     },
     Edits,
     Trash {
@@ -109,6 +110,13 @@ fn conflict(app: &Rc<App>, id: OpId, path: &Path) {
                 Some('n') => ConflictAnswer::Rename,
                 _ => ConflictAnswer::Skip,
             };
+            if answer == ConflictAnswer::Rename
+                && let Some(Pending::Rename { plan, replan, .. }) =
+                    app.ops.borrow_mut().get_mut(&id)
+                && !plan.is_empty()
+            {
+                *replan = Some(Box::new(app.index.borrow().clone()));
+            }
             app.vault.answer(id, answer);
         },
     );
@@ -116,8 +124,30 @@ fn conflict(app: &Rc<App>, id: OpId, path: &Path) {
 
 fn done(app: &Rc<App>, pending: Pending, summary: &OpSummary) {
     match pending {
-        Pending::Rename { from, to, plan } => {
-            app.tabs.follow_rename(app, &from, &to);
+        Pending::Rename {
+            from,
+            to,
+            mut plan,
+            replan,
+        } => {
+            let Some(actual) = summary.created.first() else {
+                app.status.notice("rename skipped");
+                return;
+            };
+            if actual != &to && !plan.is_empty() {
+                plan = match (
+                    replan,
+                    plan_id(app, &from, actual.is_dir()),
+                    plan_id(app, actual, actual.is_dir()),
+                ) {
+                    (Some(index), Some(old), Some(new)) => {
+                        nib_core::rename_plan(&index, &old, &new)
+                    }
+                    _ => vec![],
+                };
+            }
+            let to = actual;
+            app.tabs.follow_rename(app, &from, to);
             let name = to
                 .file_name()
                 .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
@@ -324,6 +354,16 @@ pub fn rename(app: &Rc<App>, arg: &str) {
 }
 
 fn rename_to(app: &Rc<App>, from: &Path, directory: bool, name: &str) {
+    if app
+        .tabs
+        .all()
+        .iter()
+        .any(|tab| !tab.config.get() && !editor::save_if_modified(app, tab))
+    {
+        app.status
+            .error("unsaved changes — save the notes before renaming");
+        return;
+    }
     if name.is_empty() || name.contains('/') {
         app.status.error("a new name, without slashes");
         return;
@@ -364,7 +404,12 @@ fn rename_to(app: &Rc<App>, from: &Path, directory: bool, name: &str) {
                 from: from.clone(),
                 to: to.clone(),
             },
-            Pending::Rename { from, to, plan },
+            Pending::Rename {
+                from,
+                to,
+                plan,
+                replan: None,
+            },
         );
         return;
     }
@@ -386,7 +431,12 @@ fn rename_to(app: &Rc<App>, from: &Path, directory: bool, name: &str) {
                 from: from.clone(),
                 to: to.clone(),
             },
-            Pending::Rename { from, to, plan },
+            Pending::Rename {
+                from,
+                to,
+                plan,
+                replan: None,
+            },
         );
     });
 }

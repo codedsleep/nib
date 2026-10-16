@@ -90,8 +90,7 @@ pub struct OpSummary {
     pub links: usize,
     /// Exact edits to patch into open buffers without reloading.
     pub edits: Vec<Edit>,
-    /// Where `CopyAttachment` put the file (a conflict may rename it).
-    /// Additive, Goal B.
+    /// Actual destinations of `CopyAttachment` and `Rename`, after conflicts.
     pub created: Vec<PathBuf>,
 }
 /// File-operation progress and user questions.
