@@ -262,6 +262,7 @@ pub fn patch_buffers(app: &Rc<App>, edits: &[Edit]) {
         tab.buffer.end_user_action();
         if !was_modified {
             // The buffer now matches the bytes ApplyEdits wrote.
+            tab.disk_hash.set(nib_core::text::fingerprint(&tab.text()));
             tab.buffer.set_modified(false);
         }
     }

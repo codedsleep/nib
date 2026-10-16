@@ -209,6 +209,45 @@ fn stale_rename_plan_never_replaces_unrelated_text() {
         );
     }
 }
+
+#[test]
+fn autosave_checks_the_disk_before_watcher_delivery() {
+    let d = tempfile::tempdir().unwrap();
+    let path = d.path().join("note.md");
+    fs::write(&path, "original\n").unwrap();
+    let (h, _rx) = VaultHandle::open_deferred(
+        d.path(),
+        &Config::default(),
+        Guard::confined(vec![d.path().into()]),
+    )
+    .unwrap();
+    let note = h.read_note(&path).unwrap();
+    let expected = nib_core::text::fingerprint(&note.text);
+    for outside in ["outside\n", "original\r\n", "\u{feff}original\n"] {
+        fs::write(&path, outside).unwrap();
+        assert!(
+            h.save_unchanged(&path, "mine\n", &note.fmt, expected)
+                .is_err()
+        );
+        assert_eq!(fs::read_to_string(&path).unwrap(), outside);
+    }
+    fs::remove_file(&path).unwrap();
+    assert!(
+        h.save_unchanged(&path, "mine\n", &note.fmt, expected)
+            .is_err()
+    );
+    assert!(!path.exists());
+    // Explicit save may recreate or overwrite; subsequent autosaves use its snapshot.
+    h.save(&path, "mine\n", &note.fmt).unwrap();
+    h.save_unchanged(
+        &path,
+        "next\n",
+        &note.fmt,
+        nib_core::text::fingerprint("mine\n"),
+    )
+    .unwrap();
+    assert_eq!(fs::read_to_string(path).unwrap(), "next\n");
+}
 #[test]
 fn folder_rename_updates_open_paths_without_waiting_for_a_watcher() {
     let d = tempfile::tempdir().unwrap();

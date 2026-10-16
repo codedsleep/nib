@@ -291,15 +291,44 @@ impl VaultHandle {
     }
     /// Atomically save an editable UTF-8 note and emit an index patch.
     pub fn save(&self, abs: &Path, text: &str, fmt: &TextFormat) -> Result<Generation, VaultError> {
+        self.save_checked(abs, text, fmt, None)
+    }
+    /// Autosave only if the disk still matches the last loaded/saved decoded
+    /// text fingerprint and format, even before a watcher notification arrives.
+    pub fn save_unchanged(
+        &self,
+        abs: &Path,
+        text: &str,
+        fmt: &TextFormat,
+        expected: u64,
+    ) -> Result<Generation, VaultError> {
+        self.save_checked(abs, text, fmt, Some(expected))
+    }
+    fn save_checked(
+        &self,
+        abs: &Path,
+        text: &str,
+        fmt: &TextFormat,
+        expected: Option<u64>,
+    ) -> Result<Generation, VaultError> {
         let path = self.inner.path(abs)?;
         if std::fs::metadata(&path).is_ok_and(|m| !m.is_file()) {
             return Err(VaultError::Denied(path));
         }
         match std::fs::read(&path) {
             Ok(existing) => {
-                text::decode(&existing)?;
+                let (original, format) = text::decode(&existing)?;
+                if expected.is_some_and(|h| {
+                    h != text::fingerprint(&original)
+                        || format.bom != fmt.bom
+                        || format.eol != fmt.eol
+                }) {
+                    return Err(VaultError::Message(
+                        "note changed on disk — :e! to reload, :w to overwrite".into(),
+                    ));
+                }
             }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound && expected.is_none() => {}
             Err(e) => return Err(e.into()),
         }
         let bytes = text::encode(text, fmt);

@@ -90,6 +90,8 @@ pub struct Tab {
     /// The file changed on disk while the buffer had edits: nothing saves it
     /// automatically until `:w` (overwrite) or `:e!` (reload).
     pub disk_changed: Cell<bool>,
+    /// Decoded disk snapshot; automatic saves compare it before writing.
+    pub disk_hash: Cell<u64>,
     pub buffer: sourceview5::Buffer,
     pub view: sourceview5::View,
     pub scroller: gtk::ScrolledWindow,
@@ -180,6 +182,7 @@ impl Tab {
             read_only: Cell::new(false),
             removed: Cell::new(false),
             disk_changed: Cell::new(false),
+            disk_hash: Cell::new(0),
             buffer,
             view,
             scroller,
@@ -334,6 +337,7 @@ impl Tab {
         self.read_only.set(note.read_only);
         self.removed.set(false);
         self.disk_changed.set(false);
+        self.disk_hash.set(nib_core::text::fingerprint(&note.text));
         self.pending.borrow_mut().take();
         self.buffer.begin_irreversible_action();
         match first_chunk(&note.text, line) {
@@ -514,6 +518,10 @@ pub fn apply_settings(view: &sourceview5::View, config: &nib_core::settings::Con
 
 /// Save one tab now (`Ctrl+S`, `:w`).
 pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
+    save_checked(app, tab, true)
+}
+
+fn save_checked(app: &Rc<App>, tab: &Tab, explicit: bool) -> bool {
     if tab.config.get() {
         return crate::config::save(app, tab);
     }
@@ -530,10 +538,17 @@ pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
     };
     let text = tab.text();
     let fmt = tab.fmt.borrow().clone();
-    match app.vault.save(&path, &text, &fmt) {
+    let result = if explicit {
+        app.vault.save(&path, &text, &fmt)
+    } else {
+        app.vault
+            .save_unchanged(&path, &text, &fmt, tab.disk_hash.get())
+    };
+    match result {
         Ok(_) => {
             tab.buffer.set_modified(false);
             tab.disk_changed.set(false);
+            tab.disk_hash.set(nib_core::text::fingerprint(&text));
             if tab.removed.replace(false) {
                 app.status
                     .notice(&format!("recreated {}", app.relative(&path)));
@@ -563,7 +578,7 @@ pub fn save_if_modified(app: &App, tab: &Tab) -> bool {
         && !tab.removed.get()
         && let Some(app) = app.this.upgrade()
     {
-        return save(&app, tab);
+        return save_checked(&app, tab, false);
     }
     false
 }
@@ -581,6 +596,7 @@ pub fn save_as(app: &Rc<App>, tab: &Tab, name: &str) {
         Ok(path) => {
             *tab.path.borrow_mut() = Some(path);
             *tab.fmt.borrow_mut() = TextFormat::default();
+            tab.disk_hash.set(nib_core::text::fingerprint(&text));
             tab.buffer.set_modified(false);
             app.update_title();
             app.status.notice(&format!("created {}", id.filename()));
