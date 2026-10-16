@@ -162,3 +162,22 @@ fn a_directory_is_never_opened_or_saved_as_a_note() {
         "not this vault's temporary"
     );
 }
+#[test]
+fn saving_an_unreadable_note_refuses_to_overwrite_it() {
+    let d = tempfile::tempdir().unwrap();
+    let path = d.path().join("n.md");
+    fs::write(&path, "old").unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o000)).unwrap();
+    let (h, _) = nib_vault::VaultHandle::open_deferred(
+        d.path(),
+        &nib_core::settings::Config::default(),
+        Guard::confined(vec![d.path().into()]),
+    )
+    .unwrap();
+    assert!(
+        h.save(&path, "bad", &nib_core::text::TextFormat::default())
+            .is_err()
+    );
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+    assert_eq!(fs::read_to_string(path).unwrap(), "old");
+}
