@@ -16,7 +16,9 @@ pub struct Frontmatter {
 }
 fn scalar(s: &str) -> String {
     let s = s.trim();
-    if (s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')) {
+    if s.len() >= 2
+        && ((s.starts_with('"') && s.ends_with('"')) || (s.starts_with('\'') && s.ends_with('\'')))
+    {
         s[1..s.len() - 1].to_owned()
     } else {
         s.to_owned()
@@ -99,6 +101,16 @@ pub fn parse(text: &str) -> Option<Frontmatter> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn incomplete_quotes_remain_opaque() {
+        for quote in ["\"", "'"] {
+            let text = format!("---\ntitle: {quote}\naliases: [{quote}]\n---\n");
+            let frontmatter = parse(&text).unwrap();
+            assert_eq!(frontmatter.title.as_deref(), Some(quote));
+            assert_eq!(frontmatter.aliases, [quote]);
+        }
+    }
+
     #[test]
     fn subset() {
         let f=parse("\u{feff}---\r\ntitle: 'Hi'\r\naliases: [one, \"two, three\"]\r\ntags:\r\n - A\r\n - B/C\r\nopaque: {x: 2}\r\n---\r\nBody").unwrap();
