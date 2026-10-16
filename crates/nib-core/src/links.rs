@@ -201,9 +201,49 @@ pub fn relative_path(from: &str, to: &str) -> String {
 /// Write a link destination with a source-aware relative option.
 pub fn link_from(index: &Index, from: &NoteId, target: &NoteId, fmt: LinkFormat) -> String {
     if fmt == LinkFormat::Relative {
-        relative_path(from.folder(), target.as_str())
+        wiki_relative_path(from.folder(), target.as_str())
     } else {
         shortest_link(index, target, fmt)
+    }
+}
+
+fn wiki_relative_path(from: &str, to: &str) -> String {
+    let path = relative_path(from, to);
+    if !from.is_empty() && path.contains('/') && !path.starts_with("../") {
+        format!("./{path}")
+    } else {
+        path
+    }
+}
+
+/// Emit a source-aware attachment destination, retaining a path when basenames collide.
+/// A newly copied target may not yet be in the index.
+pub fn attachment_link(
+    index: &Index,
+    from: Option<&NoteId>,
+    target: &str,
+    fmt: LinkFormat,
+) -> String {
+    if fmt == LinkFormat::Relative
+        && let Some(from) = from
+    {
+        return wiki_relative_path(from.folder(), target);
+    }
+    let name = target.rsplit('/').next().unwrap_or(target);
+    if fmt == LinkFormat::Shortest
+        && index
+            .attachments
+            .iter()
+            .filter(|p| {
+                p.rsplit('/')
+                    .next()
+                    .is_some_and(|n| n.eq_ignore_ascii_case(name))
+            })
+            .all(|p| p.eq_ignore_ascii_case(target))
+    {
+        name.into()
+    } else {
+        target.into()
     }
 }
 /// Build bracket syntax without losing alias, fragment or embed marker.

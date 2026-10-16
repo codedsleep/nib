@@ -91,6 +91,10 @@ discarding remaining edits. Config changes require an explicit save. Opening
 past 32 tabs closes the least recently used clean tab; if every tab has edits,
 save or close one first.
 
+Copied and completed attachment links retain their folder when basenames collide.
+The `links.format` setting applies to note and attachment links, including paths
+relative to the note being edited.
+
 Templates support `{{date}}`, `{{time}}`, `{{title}}` and `{{date:FORMAT}}`.
 Daily notes default to `daily/YYYY-MM-DD.md`. Ctrl+V pastes a screenshot only
 in insert mode or with vim off; `:paste-image` works in any mode.

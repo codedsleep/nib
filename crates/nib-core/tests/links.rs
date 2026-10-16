@@ -4,6 +4,44 @@ use std::time::SystemTime;
 fn id(s: &str) -> NoteId {
     NoteId::new(s).unwrap()
 }
+
+#[test]
+fn emitted_relative_links_and_duplicate_attachments_resolve_to_their_target() {
+    let from = id("parent/source");
+    let target = id("parent/child/note");
+    let meta = nib_core::parse_note(target.clone(), "", std::time::SystemTime::UNIX_EPOCH, 0);
+    let i = nib_core::Index::build_with_attachments(
+        vec![meta],
+        vec![
+            "attachments/image.png".into(),
+            "parent/child/image.png".into(),
+        ],
+    );
+    let text = links::link_from(&i, &from, &target, LinkFormat::Relative);
+    assert_eq!(text, "./child/note");
+    assert!(
+        matches!(nib_core::resolve(&i, &from, &text), nib_core::LinkTarget::Note { id, .. } if id == target)
+    );
+    for format in [
+        LinkFormat::Shortest,
+        LinkFormat::Absolute,
+        LinkFormat::Relative,
+    ] {
+        let text = links::attachment_link(&i, Some(&from), "parent/child/image.png", format);
+        assert_eq!(
+            nib_core::resolve(&i, &from, &text),
+            nib_core::LinkTarget::Attachment("parent/child/image.png".into())
+        );
+    }
+    assert_eq!(
+        links::attachment_link(&i, Some(&from), "new/image.png", LinkFormat::Shortest),
+        "new/image.png"
+    );
+    assert_eq!(
+        links::attachment_link(&i, Some(&from), "new/unique.png", LinkFormat::Shortest),
+        "unique.png"
+    );
+}
 fn m(s: &str, t: &str) -> nib_core::NoteMeta {
     parse_note(id(s), t, SystemTime::UNIX_EPOCH, t.len() as u64)
 }

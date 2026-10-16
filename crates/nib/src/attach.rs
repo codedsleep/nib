@@ -48,20 +48,26 @@ pub fn wants_ctrl_v(keyval: gtk::gdk::Key, state: gtk::gdk::ModifierType) -> boo
 /// Links for files now in the vault, at the cursor, one per file.
 fn insert_links(app: &Rc<App>, tab: &Tab, paths: &[PathBuf]) {
     let fmt = app.config.borrow().links.format;
+    let from = tab.path.borrow().as_deref().and_then(|p| app.note_id(p));
     let links: Vec<String> = paths
         .iter()
         .map(|p| {
             if let Some(id) = app.note_id(p) {
                 let target = if app.index_ready.get() {
-                    nib_core::shortest_link(&app.index.borrow(), &id, fmt)
+                    match &from {
+                        Some(from) => {
+                            nib_core::links::link_from(&app.index.borrow(), from, &id, fmt)
+                        }
+                        None => nib_core::shortest_link(&app.index.borrow(), &id, fmt),
+                    }
                 } else {
                     id.to_string()
                 };
                 format!("[[{target}]]")
             } else {
-                let name = p
-                    .file_name()
-                    .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+                let rel = app.relative(p);
+                let name =
+                    nib_core::links::attachment_link(&app.index.borrow(), from.as_ref(), &rel, fmt);
                 let bang = if crate::reading::is_image(p) { "!" } else { "" };
                 format!("{bang}[[{name}]]")
             }

@@ -386,18 +386,7 @@ fn accept(app: &Rc<App>, tab: &Rc<Tab>) {
         CandidateTarget::Heading(_, _) => chosen.label.clone(),
         CandidateTarget::Tag(t) => t.clone(),
         CandidateTarget::Attachment(path) => {
-            let name = path.rsplit('/').next().unwrap_or(path);
-            let unique = index
-                .attachments
-                .iter()
-                .filter(|a| a.rsplit('/').next() == Some(name))
-                .count()
-                == 1;
-            if unique {
-                name.to_owned()
-            } else {
-                path.clone()
-            }
+            nib_core::links::attachment_link(&index, from.as_ref(), path, format)
         }
     };
     drop(index);
