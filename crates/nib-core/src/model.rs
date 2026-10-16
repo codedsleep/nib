@@ -140,6 +140,8 @@ pub enum LinkKind {
 pub struct Link {
     /// Destination as written, without alias.
     pub raw: String,
+    /// Destination source bytes, including Markdown escapes, for stale-plan checks.
+    pub written: String,
     /// Resolved destination.
     pub target: LinkTarget,
     /// Display alias.
@@ -178,6 +180,8 @@ pub struct NoteMeta {
     pub frontmatter: Option<Range<usize>>,
     /// Disk modification timestamp.
     pub mtime: SystemTime,
+    /// Fingerprint of the decoded source used by rename-plan preconditions.
+    pub text_hash: u64,
     /// Original byte size.
     pub size: u64,
 }
@@ -190,6 +194,10 @@ pub struct Edit {
     pub byte_range: Range<usize>,
     /// Replacement destination.
     pub replacement: String,
+    /// Original destination bytes that must still occupy the range.
+    pub expected: String,
+    /// Fingerprint of the complete decoded source at planning time.
+    pub source_hash: u64,
 }
 #[cfg(test)]
 mod tests {

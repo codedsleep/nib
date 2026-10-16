@@ -96,6 +96,14 @@ pub fn encode(text: &str, fmt: &TextFormat) -> Vec<u8> {
     out.extend_from_slice(text.as_bytes());
     out
 }
+/// Fingerprint a decoded buffer for rejecting edits planned against stale text.
+/// This is an in-process change detector, not a cryptographic signature.
+pub fn fingerprint(text: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    text.as_bytes().hash(&mut h);
+    h.finish()
+}
 #[cfg(test)]
 mod tests {
     use super::*;

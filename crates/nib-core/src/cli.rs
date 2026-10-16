@@ -28,7 +28,7 @@ pub struct Invocation {
 #[derive(Debug, thiserror::Error)]
 #[error("{0}\n{USAGE}")]
 pub struct UsageError(pub String);
-/// Parse arguments excluding argv[0].
+/// Parse arguments excluding `argv[0]`.
 pub fn parse(args: impl IntoIterator<Item = String>) -> Result<Invocation, UsageError> {
     let mut args = args.into_iter();
     let mut inv = Invocation::default();

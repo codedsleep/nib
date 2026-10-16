@@ -8,7 +8,7 @@ pub fn fragments(raw: &str) -> (&str, Option<String>, Option<String>) {
         None => (raw, None, None),
     }
 }
-fn choose(ids: &[NoteId], from: &NoteId) -> Option<NoteId> {
+fn choose(ids: &std::collections::BTreeSet<NoteId>, from: &NoteId) -> Option<NoteId> {
     ids.iter()
         .min_by_key(|id| (id.folder() != from.folder(), id.as_str().len(), id.as_str()))
         .cloned()
@@ -20,14 +20,15 @@ pub fn resolve(index: &Index, from: &NoteId, raw: &str) -> LinkTarget {
     if has_scheme(&path) {
         return LinkTarget::External(raw.into());
     }
-    if is_attachment(&path) {
-        return LinkTarget::Attachment(path);
-    }
     let id = if path.is_empty() {
         Some(from.clone())
     } else if path.contains('/') {
-        let clean = path.trim_start_matches('/');
-        NoteId::new(clean).ok().and_then(|id| {
+        let clean = if path.starts_with("./") || path.starts_with("../") {
+            format!("{}/{path}", from.folder())
+        } else {
+            path.trim_start_matches('/').to_owned()
+        };
+        NoteId::new(&clean).ok().and_then(|id| {
             index
                 .notes
                 .get(&id)
@@ -35,7 +36,8 @@ pub fn resolve(index: &Index, from: &NoteId, raw: &str) -> LinkTarget {
                 .or_else(|| index.by_path.get(&id.as_str().to_lowercase()).cloned())
         })
     } else {
-        let stem = path.strip_suffix(".md").unwrap_or(&path).to_lowercase();
+        let stem = NoteId::new(&path)
+            .map_or_else(|_| path.to_lowercase(), |id| id.as_str().to_lowercase());
         index
             .by_stem
             .get(&stem)
@@ -43,8 +45,55 @@ pub fn resolve(index: &Index, from: &NoteId, raw: &str) -> LinkTarget {
             .or_else(|| index.by_alias.get(&stem).and_then(|ids| choose(ids, from)))
     };
     id.map_or_else(
-        || LinkTarget::Unresolved(raw.into()),
+        || {
+            if is_attachment(&path) {
+                attachment(index, from, &path).map_or_else(
+                    || LinkTarget::Unresolved(raw.into()),
+                    LinkTarget::Attachment,
+                )
+            } else {
+                LinkTarget::Unresolved(raw.into())
+            }
+        },
         |id| LinkTarget::Note { id, heading, block },
+    )
+}
+fn attachment(index: &Index, from: &NoteId, path: &str) -> Option<String> {
+    let path = if path.starts_with("./") || path.starts_with("../") {
+        format!("{}/{path}", from.folder())
+    } else {
+        path.into()
+    };
+    let path = normalize_relative(&path)?;
+    let lower = path.to_lowercase();
+    if path.contains('/') {
+        return Some(
+            index
+                .attachments
+                .iter()
+                .find(|p| p.eq_ignore_ascii_case(&path))
+                .cloned()
+                .unwrap_or(path),
+        );
+    }
+    Some(
+        index
+            .attachments
+            .iter()
+            .filter(|p| {
+                p.rsplit('/')
+                    .next()
+                    .is_some_and(|name| name.to_lowercase() == lower)
+            })
+            .min_by_key(|p| {
+                (
+                    p.rsplit_once('/').map_or("", |(folder, _)| folder) != from.folder(),
+                    p.len(),
+                    p.as_str(),
+                )
+            })
+            .cloned()
+            .unwrap_or(path),
     )
 }
 /// Resolve `CommonMark` relative destinations from the linking note's folder.
@@ -88,7 +137,7 @@ pub fn is_attachment(path: &str) -> bool {
     path.rsplit('/')
         .next()
         .and_then(|s| s.rsplit_once('.'))
-        .is_some_and(|(_, e)| !e.eq_ignore_ascii_case("md"))
+        .is_some_and(|(stem, e)| !stem.is_empty() && !e.eq_ignore_ascii_case("md"))
 }
 /// Normalize a relative attachment path without allowing root escapes.
 pub fn normalize_relative(path: &str) -> Option<String> {
@@ -213,6 +262,8 @@ pub fn rename_plan(index: &Index, old: &NoteId, new: &NoteId) -> Vec<Edit> {
                 note: source.clone(),
                 byte_range: l.byte_range.clone(),
                 replacement,
+                expected: l.written.clone(),
+                source_hash: meta.text_hash,
             });
         }
     }
@@ -221,5 +272,6 @@ pub fn rename_plan(index: &Index, old: &NoteId, new: &NoteId) -> Vec<Edit> {
             .cmp(&b.note)
             .then_with(|| b.byte_range.start.cmp(&a.byte_range.start))
     });
+    edits.dedup();
     edits
 }

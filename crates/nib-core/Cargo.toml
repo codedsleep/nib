@@ -12,5 +12,6 @@ chrono.workspace = true
 pulldown-cmark.workspace = true
 nucleo-matcher.workspace = true
 unicode-segmentation.workspace = true
+memchr.workspace = true
 [lints]
 workspace = true

@@ -23,8 +23,10 @@ fn line(text: &str, offset: usize) -> Option<(usize, &str)> {
     if !text.is_char_boundary(offset) {
         return None;
     }
-    let start = text[..offset].rfind('\n').map_or(0, |i| i + 1);
-    let end = text[offset..].find('\n').map_or(text.len(), |i| offset + i);
+    let start = text[..offset].rfind(['\n', '\r']).map_or(0, |i| i + 1);
+    let end = text[offset..]
+        .find(['\n', '\r'])
+        .map_or(text.len(), |i| offset + i);
     Some((start, &text[start..end]))
 }
 fn marker(line: &str) -> Option<(usize, usize, String)> {

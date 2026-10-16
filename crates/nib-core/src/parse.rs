@@ -22,8 +22,13 @@ pub fn location(starts: &[usize], offset: usize) -> (u32, u32) {
 }
 /// Byte starts for source lines.
 pub fn line_starts(text: &str) -> Vec<usize> {
+    let bytes = text.as_bytes();
     std::iter::once(0)
-        .chain(text.match_indices('\n').map(|(i, _)| i + 1))
+        .chain(
+            memchr::memchr2_iter(b'\r', b'\n', bytes)
+                .filter(|i| bytes[*i] == b'\n' || bytes.get(*i + 1) != Some(&b'\n'))
+                .map(|i| i + 1),
+        )
         .collect()
 }
 /// Locate the destination in a parser-provided link span.
@@ -31,20 +36,50 @@ pub fn destination_span(text: &str, span: &Range<usize>, raw: &str, wiki: bool) 
     let source = &text[span.clone()];
     let at = if wiki {
         source.find("[[").map(|i| i + 2)
-    } else if let Some(i) = source.find("](") {
-        Some(i + 2 + usize::from(source[i + 2..].starts_with('<')))
     } else {
-        source.find(raw)
+        source
+            .find("](")
+            .map(|i| i + 2)
+            .or_else(|| source.find("]: ").map(|i| i + 3))
+            .or_else(|| source.find("]:").map(|i| i + 2))
+            .or_else(|| source.find(raw))
     };
-    let start = span.start + at.unwrap_or(0);
-    let end = if wiki {
-        text[start..span.end]
+    let mut start = span.start + at.unwrap_or(0);
+    if wiki {
+        let end = text[start..span.end]
             .find(['|', ']'])
-            .map_or(span.end, |i| start + i)
-    } else {
-        start + raw.len()
-    };
-    start..end.min(span.end)
+            .map_or(span.end, |i| start + i);
+        return start..end;
+    }
+    start += text[start..span.end].len() - text[start..span.end].trim_start().len();
+    if text[start..span.end].starts_with('<') {
+        start += 1;
+        return start
+            ..text[start..span.end]
+                .find('>')
+                .map_or(span.end, |i| start + i);
+    }
+    let mut depth = 0;
+    let mut escape = false;
+    let mut end = start;
+    for c in text[start..span.end].chars() {
+        if escape {
+            escape = false;
+        } else if c == '\\' {
+            escape = true;
+        } else if c == ')' {
+            if depth == 0 {
+                break;
+            }
+            depth -= 1;
+        } else if c == '(' {
+            depth += 1;
+        } else if c.is_whitespace() {
+            break;
+        }
+        end += c.len_utf8();
+    }
+    start..end
 }
 fn scan_tags(
     text: &str,
@@ -97,14 +132,19 @@ pub fn parse_note(id: NoteId, text: &str, mtime: SystemTime, size: u64) -> NoteM
         blocks: vec![],
         frontmatter: fm.map(|f| f.span),
         mtime,
+        text_hash: crate::text::fingerprint(text),
         size,
     };
     let mut heading: Option<(u8, String, u32)> = None;
     let mut code = false;
     let mut metadata = false;
-    for (event, span) in
-        Parser::new_ext(text.trim_start_matches('\u{feff}'), options()).into_offset_iter()
-    {
+    let parser = Parser::new_ext(text.trim_start_matches('\u{feff}'), options());
+    let definitions: std::collections::HashMap<_, _> = parser
+        .reference_definitions()
+        .iter()
+        .map(|(key, def)| (key.to_lowercase(), def.span.clone()))
+        .collect();
+    for (event, span) in parser.into_offset_iter() {
         let shift = usize::from(text.starts_with('\u{feff}')) * 3;
         let span = span.start + shift..span.end + shift;
         match event {
@@ -140,18 +180,25 @@ pub fn parse_note(id: NoteId, text: &str, mtime: SystemTime, size: u64) -> NoteM
                 MdTag::Link {
                     link_type,
                     dest_url,
+                    id: reference_id,
                     ..
                 }
                 | MdTag::Image {
                     link_type,
                     dest_url,
+                    id: reference_id,
                     ..
                 },
             ) => {
                 let wiki = matches!(link_type, LinkType::WikiLink { .. });
                 let source = &text[span.clone()];
                 let embed = source.starts_with('!');
-                let byte_range = destination_span(text, &span, &dest_url, wiki);
+                let shift = usize::from(text.starts_with('\u{feff}')) * 3;
+                let definition = definitions
+                    .get(&reference_id.to_lowercase())
+                    .map(|s| s.start + shift..s.end + shift);
+                let byte_range =
+                    destination_span(text, definition.as_ref().unwrap_or(&span), &dest_url, wiki);
                 let raw = if wiki {
                     text[byte_range.clone()].to_owned()
                 } else {
@@ -167,6 +214,7 @@ pub fn parse_note(id: NoteId, text: &str, mtime: SystemTime, size: u64) -> NoteM
                 let (line, col) = location(&starts, span.start);
                 meta.links.push(Link {
                     target: LinkTarget::Unresolved(raw.clone()),
+                    written: text[byte_range.clone()].to_owned(),
                     raw,
                     alias,
                     embed,
