@@ -30,9 +30,9 @@ pub fn paths(profile: Option<&str>) -> Paths {
 /// SHA-256 of the canonical root, first sixteen lowercase hex characters.
 pub fn vault_key(root: &Path) -> Result<String, VaultError> {
     let root = root.canonicalize()?;
-    let hash = glib::compute_checksum_for_string(
+    let hash = glib::compute_checksum_for_data(
         glib::ChecksumType::Sha256,
-        root.to_string_lossy().as_ref(),
+        root.as_os_str().as_encoded_bytes(),
     )
     .ok_or_else(|| VaultError::Message("SHA-256 unavailable".into()))?;
     Ok(hash[..16].into())
@@ -70,7 +70,7 @@ pub fn load_config(paths: &Paths, guard: &Guard) -> Result<(Config, Vec<Warning>
     }
 }
 /// Saved cursor and note per tab.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TabState {
     /// Relative note ID, None for untitled.
@@ -81,6 +81,16 @@ pub struct TabState {
     pub column: u32,
     /// Reading mode.
     pub reading: bool,
+}
+impl Default for TabState {
+    fn default() -> Self {
+        Self {
+            note: None,
+            line: 1,
+            column: 0,
+            reading: false,
+        }
+    }
 }
 /// Per-vault window state, never stored in the vault itself.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
