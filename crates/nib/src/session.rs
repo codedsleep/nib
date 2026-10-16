@@ -106,7 +106,7 @@ pub fn restore(app: &Rc<App>) {
             if path.is_some() && path == first_path {
                 continue;
             }
-            let tab = app.tabs.add_tab();
+            let Some(tab) = app.tabs.add_tab() else { break };
             if let Some(path) = path.filter(|p| p.is_file()) {
                 app.load_into(&tab, &path, Some(state.line), false);
             }

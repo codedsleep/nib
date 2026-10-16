@@ -328,7 +328,10 @@ impl App {
         app.layout();
         registry::install(&app);
         Self::connect_window(&app);
-        let tab = app.tabs.new_tab();
+        let tab = app
+            .tabs
+            .new_tab()
+            .ok_or_else(|| anyhow::anyhow!("cannot create initial tab"))?;
         match first {
             Some((path, Ok(text))) => {
                 let line = if explicit {
@@ -565,7 +568,10 @@ impl App {
             && current.buffer.char_count() == 0
             && !current.buffer.is_modified();
         let tab = if new_tab && !blank {
-            self.tabs.new_tab()
+            let Some(tab) = self.tabs.new_tab() else {
+                return;
+            };
+            tab
         } else {
             current
         };
@@ -579,7 +585,7 @@ impl App {
         path: &Path,
         line: Option<u32>,
         history: bool,
-    ) {
+    ) -> bool {
         let note = if crate::reading::is_image(path) {
             None
         } else {
@@ -588,11 +594,15 @@ impl App {
                 Err(e) => {
                     self.status
                         .error(&format!("cannot open {}: {e}", self.relative(path)));
-                    return;
+                    return false;
                 }
             }
         };
-        editor::save_if_modified(self, tab);
+        if !editor::save_if_modified(self, tab) {
+            self.status
+                .error("unsaved changes — :w saves them; open another tab to keep them");
+            return false;
+        }
         self.completion.close();
         let previous = tab.path.borrow().clone();
         if history
@@ -622,6 +632,7 @@ impl App {
             self.panel.queue(self);
             self.tabs.focus_current();
         }
+        true
     }
 
     /// `Alt+Left` / `Alt+Right`: the tab's previous or next note, at its line.
@@ -632,7 +643,7 @@ impl App {
         } else {
             (&tab.forward, &tab.back)
         };
-        let Some((path, line)) = from.borrow_mut().pop() else {
+        let Some((path, line)) = from.borrow().last().cloned() else {
             self.status.notice(if back {
                 "no earlier note in this tab"
             } else {
@@ -640,11 +651,14 @@ impl App {
             });
             return;
         };
-        if let Some(current) = tab.path.borrow().clone() {
-            let at = u32::try_from(tab.cursor_line()).unwrap_or(1);
-            to.borrow_mut().push((current, at));
+        let previous = tab.path.borrow().clone();
+        let at = u32::try_from(tab.cursor_line()).unwrap_or(1);
+        if self.load_into(&tab, &path, Some(line), false) {
+            from.borrow_mut().pop();
+            if let Some(current) = previous {
+                to.borrow_mut().push((current, at));
+            }
         }
-        self.load_into(&tab, &path, Some(line), false);
     }
 
     fn show_image(self: &Rc<Self>, tab: &Rc<editor::Tab>, path: &Path) {
@@ -777,10 +791,28 @@ impl App {
         let weak = app.this.clone();
         app.window.connect_close_request(move |_| {
             if let Some(app) = weak.upgrade() {
-                crate::session::save(&app);
                 if !app.discard_on_close.get() {
                     app.autosave_all();
+                    let modified: Vec<String> = app
+                        .tabs
+                        .all()
+                        .iter()
+                        .filter(|t| t.buffer.is_modified())
+                        .map(|t| t.display_path(&app))
+                        .collect();
+                    if !modified.is_empty() {
+                        let question =
+                            format!("Unsaved changes in {}. Quit anyway?", modified.join(", "));
+                        crate::dialogs::ask(&app, &question, |app, yes| {
+                            if yes {
+                                app.discard_on_close.set(true);
+                                app.window.close();
+                            }
+                        });
+                        return glib::Propagation::Stop;
+                    }
                 }
+                crate::session::save(&app);
                 // Vim keeps marks in the buffers; let go before the views go.
                 app.completion.close();
                 for tab in app.tabs.all() {

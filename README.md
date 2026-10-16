@@ -85,6 +85,12 @@ reloads an unmodified buffer; a modified buffer shows a notice and waits for
 `:e!` (reload and discard edits) or `:w` (explicitly overwrite). Back up your vault
 and review changes during the first week of use.
 
+Navigation keeps unsaved edits when autosave is off, a save fails, or the note
+changed externally; save with `:w` or open another tab. Closing asks before
+discarding remaining edits. Config changes require an explicit save. Opening
+past 32 tabs closes the least recently used clean tab; if every tab has edits,
+save or close one first.
+
 Templates support `{{date}}`, `{{time}}`, `{{title}}` and `{{date:FORMAT}}`.
 Daily notes default to `daily/YYYY-MM-DD.md`. Ctrl+V pastes a screenshot only
 in insert mode or with vim off; `:paste-image` works in any mode.

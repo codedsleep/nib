@@ -551,16 +551,21 @@ pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
 /// The automatic save (autosave, tab switch, focus-out, before a rename plan
 /// or a search). It never writes over a change made on disk, nor recreates a
 /// removed note: those wait for an explicit `:w` (P§16).
-pub fn save_if_modified(app: &App, tab: &Tab) {
-    if tab.buffer.is_modified()
+pub fn save_if_modified(app: &App, tab: &Tab) -> bool {
+    if !tab.buffer.is_modified() {
+        return true;
+    }
+    if app.config.borrow().editor.autosave
+        && !tab.config.get()
         && tab.path.borrow().is_some()
         && !tab.read_only.get()
         && !tab.disk_changed.get()
         && !tab.removed.get()
         && let Some(app) = app.this.upgrade()
     {
-        save(&app, tab);
+        return save(&app, tab);
     }
+    false
 }
 
 /// Give an untitled tab its note: created in the new-note folder, never over

@@ -59,15 +59,20 @@ impl Tabs {
     }
 
     /// A new empty tab at the end, made current.
-    pub fn new_tab(&self) -> Rc<Tab> {
-        let tab = self.add_tab();
+    pub fn new_tab(&self) -> Option<Rc<Tab>> {
+        let tab = self.add_tab()?;
         self.select(self.list.borrow().len() - 1);
-        tab
+        Some(tab)
     }
 
     /// A new empty tab at the end, not selected (session restore).
-    pub fn add_tab(&self) -> Rc<Tab> {
+    pub fn add_tab(&self) -> Option<Rc<Tab>> {
         let app = self.app.upgrade().expect("tabs are created by a live App");
+        if self.len() >= MAX_TABS && self.list.borrow().iter().all(|t| t.buffer.is_modified()) {
+            app.status
+                .error("all 32 tabs have unsaved changes — save or close a tab first");
+            return None;
+        }
         let id = self.next_id.get();
         self.next_id.set(id + 1);
         let tab = Tab::new(&app, id);
@@ -99,21 +104,20 @@ impl Tabs {
         tab.button.add_controller(middle);
         self.list.borrow_mut().push(tab.clone());
         tab.refresh_label(&app);
-        self.limit(&app);
-        tab
+        self.limit(&app, id);
+        Some(tab)
     }
 
     /// Over 32 tabs, the least recently used unmodified one closes.
-    fn limit(&self, app: &Rc<App>) {
+    fn limit(&self, app: &Rc<App>, added: u64) {
         if self.list.borrow().len() <= MAX_TABS {
             return;
         }
-        let active = self.current().id;
         let oldest = self
             .list
             .borrow()
             .iter()
-            .filter(|t| t.id != active && !t.buffer.is_modified())
+            .filter(|t| t.id != added && !t.buffer.is_modified())
             .min_by_key(|t| t.used.get())
             .cloned();
         if let Some(t) = oldest {
@@ -219,7 +223,7 @@ impl Tabs {
                 .as_ref()
                 .is_some_and(|r| r.view.has_focus());
         if self.list.borrow().len() == 1 {
-            self.new_tab();
+            let _ = self.new_tab();
         }
         let current = self.active.get();
         self.list.borrow_mut().remove(index);

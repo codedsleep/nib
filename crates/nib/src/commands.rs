@@ -110,10 +110,8 @@ pub fn close_tab(app: &Rc<App>, tab: &Rc<crate::editor::Tab>) {
         app.tabs.close(app, tab);
         return;
     }
-    if app.config.borrow().editor.autosave && tab.path.borrow().is_some() {
-        if editor::save(app, tab) {
-            app.tabs.close(app, tab);
-        }
+    if editor::save_if_modified(app, tab) {
+        app.tabs.close(app, tab);
         return;
     }
     let question = format!(
@@ -132,7 +130,7 @@ pub fn close_tab(app: &Rc<App>, tab: &Rc<crate::editor::Tab>) {
 pub fn tab(app: &Rc<App>, arg: &str) {
     match arg {
         "" | "new" => {
-            app.tabs.new_tab();
+            let _ = app.tabs.new_tab();
             app.tabs.focus_current();
         }
         "close" => quit(app, ""),
@@ -187,25 +185,7 @@ pub fn quit_force(app: &Rc<App>, _: &str) {
 /// `:qa`, `Ctrl+Q`: close the window, asking once (listing the notes) when
 /// autosave is off and anything is modified.
 pub fn quit_all(app: &Rc<App>, _: &str) {
-    let autosave = app.config.borrow().editor.autosave;
-    let modified: Vec<String> = app
-        .tabs
-        .all()
-        .iter()
-        .filter(|t| t.buffer.is_modified() && (!autosave || t.path.borrow().is_none()))
-        .map(|t| t.display_path(app))
-        .collect();
-    if modified.is_empty() {
-        app.window.close();
-        return;
-    }
-    let question = format!("Unsaved changes in {}. Quit anyway?", modified.join(", "));
-    dialogs::ask(app, &question, |app, yes| {
-        if yes {
-            app.discard_on_close.set(true);
-            app.window.close();
-        }
-    });
+    app.window.close();
 }
 
 /// `:e NOTE` opens (or creates, like a followed link) a note; `:e` alone

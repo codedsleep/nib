@@ -19,7 +19,9 @@ pub fn open(app: &Rc<App>) {
             return;
         }
     };
-    let tab = app.tabs.new_tab();
+    let Some(tab) = app.tabs.new_tab() else {
+        return;
+    };
     tab.config.set(true);
     let path = app.paths.config.join("nib.toml");
     let note = NoteText {
