@@ -47,6 +47,16 @@ pub trait RenderCtx {
     fn resolve_markdown(&self, raw: &str) -> LinkTarget {
         self.resolve(raw)
     }
+    /// Resolve links inside an embed relative to its resolved source note.
+    /// Index-backed contexts override this with core's source-aware resolvers.
+    fn resolve_in(&self, source: &crate::NoteId, raw: &str, kind: crate::LinkKind) -> LinkTarget {
+        let _ = source;
+        if kind == crate::LinkKind::Wiki {
+            self.resolve(raw)
+        } else {
+            self.resolve_markdown(raw)
+        }
+    }
     /// Supply already loaded note Markdown for a one-level embed.
     fn embed(&self, _raw: &str) -> Option<String> {
         None
@@ -239,6 +249,28 @@ impl Op<'_> {
         }
     }
 }
+fn resolve_target(
+    ctx: &dyn RenderCtx,
+    source: Option<&crate::NoteId>,
+    raw: &str,
+    wiki: bool,
+) -> LinkTarget {
+    if let Some(source) = source {
+        ctx.resolve_in(
+            source,
+            raw,
+            if wiki {
+                crate::LinkKind::Wiki
+            } else {
+                crate::LinkKind::Markdown
+            },
+        )
+    } else if wiki {
+        ctx.resolve(raw)
+    } else {
+        ctx.resolve_markdown(raw)
+    }
+}
 fn text_value(text: pulldown_cmark::CowStr<'_>) -> Cow<'_, str> {
     match text {
         pulldown_cmark::CowStr::Borrowed(text) => Cow::Borrowed(text),
@@ -269,10 +301,15 @@ fn newline(out: &mut Vec<Op<'_>>, lines: Range<u32>) {
 }
 /// Build reading operations with source ranges and no widget allocations.
 pub fn render<'a>(md: &'a str, ctx: &dyn RenderCtx) -> Vec<Op<'a>> {
-    render_depth(md, ctx, 0)
+    render_depth(md, ctx, 0, None)
 }
 #[allow(clippy::too_many_lines)] // One exhaustive parser-event dispatch keeps rendering and source mapping together.
-fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> {
+fn render_depth<'a>(
+    md: &'a str,
+    ctx: &dyn RenderCtx,
+    depth: u8,
+    source: Option<&crate::NoteId>,
+) -> Vec<Op<'a>> {
     let starts = line_starts(md);
     let mut out = Vec::with_capacity(starts.len().saturating_mul(8));
     let fm = frontmatter::parse(md);
@@ -358,15 +395,11 @@ fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> 
                 ..
             }) => {
                 let wiki = matches!(link_type, LinkType::WikiLink { .. });
-                let source = &md[span.clone()];
-                let hint = source
+                let image_source = &md[span.clone()];
+                let hint = image_source
                     .split_once('|')
                     .and_then(|(_, h)| h.trim_end_matches(']').parse().ok());
-                let target = if wiki {
-                    ctx.resolve(&dest_url)
-                } else {
-                    ctx.resolve_markdown(&dest_url)
-                };
+                let target = resolve_target(ctx, source, &dest_url, wiki);
                 match target {
                     LinkTarget::Attachment(ref path) if !crate::links::has_scheme(path) => out
                         .push(Op::Anchor {
@@ -376,7 +409,7 @@ fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> 
                             },
                             lines: lines.clone(),
                         }),
-                    LinkTarget::Note { .. } if wiki && depth == 0 => {
+                    LinkTarget::Note { ref id, .. } if wiki && depth == 0 => {
                         if let Some(text) = ctx.embed(&dest_url) {
                             let child = if let Some((_, heading)) = dest_url.split_once('#') {
                                 render_section_depth(
@@ -384,9 +417,10 @@ fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> 
                                     &crate::model::slug(heading),
                                     ctx,
                                     depth + 1,
+                                    Some(id),
                                 )
                             } else {
-                                render_depth(&text, ctx, depth + 1)
+                                render_depth(&text, ctx, depth + 1, Some(id))
                             };
                             out.push(Op::Anchor {
                                 kind: Anchor::Embed {
@@ -481,11 +515,12 @@ fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> 
                         link_type,
                         ..
                     } => {
-                        let target = if matches!(link_type, LinkType::WikiLink { .. }) {
-                            ctx.resolve(&dest_url)
-                        } else {
-                            ctx.resolve_markdown(&dest_url)
-                        };
+                        let target = resolve_target(
+                            ctx,
+                            source,
+                            &dest_url,
+                            matches!(link_type, LinkType::WikiLink { .. }),
+                        );
                         tags.insert(if matches!(target, LinkTarget::Unresolved(_)) {
                             "unresolved-link"
                         } else {
@@ -655,13 +690,14 @@ fn render_depth<'a>(md: &'a str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op<'a>> 
 }
 /// Render one heading and its descendants, ending at the next peer heading.
 pub fn render_section<'a>(md: &'a str, heading_slug: &str, ctx: &dyn RenderCtx) -> Vec<Op<'a>> {
-    render_section_depth(md, heading_slug, ctx, 0)
+    render_section_depth(md, heading_slug, ctx, 0, None)
 }
 fn render_section_depth<'a>(
     md: &'a str,
     slug: &str,
     ctx: &dyn RenderCtx,
     depth: u8,
+    source: Option<&crate::NoteId>,
 ) -> Vec<Op<'a>> {
     let headings = crate::edit::outline(md);
     let Some(h) = headings.iter().find(|h| h.slug == slug) else {
@@ -671,7 +707,7 @@ fn render_section_depth<'a>(
         .iter()
         .find(|n| n.line > h.line && n.level <= h.level)
         .map_or(u32::MAX, |h| h.line);
-    render_depth(md, ctx, depth)
+    render_depth(md, ctx, depth, source)
         .into_iter()
         .filter(|op| op.lines().start >= h.line && op.lines().start < end)
         .collect()

@@ -64,3 +64,78 @@ fn section() {
     assert!(!s.contains("Two"));
     assert!(render::render_section("# X", "missing", &Context).is_empty());
 }
+#[test]
+fn embedded_links_use_the_embedded_note_as_their_source() {
+    use nib_core::{Index, LinkKind, links, parse_note};
+    use std::time::SystemTime;
+    struct Indexed {
+        index: Index,
+        from: NoteId,
+    }
+    impl RenderCtx for Indexed {
+        fn resolve(&self, raw: &str) -> LinkTarget {
+            links::resolve(&self.index, &self.from, raw)
+        }
+        fn resolve_markdown(&self, raw: &str) -> LinkTarget {
+            links::resolve_markdown(&self.index, &self.from, raw)
+        }
+        fn resolve_in(&self, source: &NoteId, raw: &str, kind: LinkKind) -> LinkTarget {
+            if kind == LinkKind::Wiki {
+                links::resolve(&self.index, source, raw)
+            } else {
+                links::resolve_markdown(&self.index, source, raw)
+            }
+        }
+        fn embed(&self, _: &str) -> Option<String> {
+            Some("[[Sibling]] [relative](Sibling.md)\n![](image.png)".into())
+        }
+    }
+    let id = |s: &str| NoteId::new(s).unwrap();
+    let index = Index::build_with_attachments(
+        ["root/outer", "child/inner", "root/Sibling", "child/Sibling"]
+            .into_iter()
+            .map(|s| parse_note(id(s), "", SystemTime::UNIX_EPOCH, 0))
+            .collect(),
+        vec!["root/image.png".into(), "child/image.png".into()],
+    );
+    let ctx = Indexed {
+        index,
+        from: id("root/outer"),
+    };
+    let ops = render::render("![[child/inner]]\n[[Sibling]]", &ctx);
+    let child = ops
+        .iter()
+        .find_map(|op| {
+            if let render::Op::Anchor {
+                kind: render::Anchor::Embed { ops, .. },
+                ..
+            } = op
+            {
+                Some(ops)
+            } else {
+                None
+            }
+        })
+        .unwrap();
+    let targets: Vec<_> = child
+        .iter()
+        .filter_map(|op| {
+            if let render::Op::Text {
+                link: Some(target), ..
+            } = op
+            {
+                Some(target.as_ref())
+            } else {
+                None
+            }
+        })
+        .collect();
+    assert_eq!(targets.len(), 2);
+    assert!(
+        targets
+            .iter()
+            .all(|t| matches!(t,LinkTarget::Note{id:note,..}if *note==id("child/Sibling")))
+    );
+    assert!(child.iter().any(|op|matches!(op,render::Op::Anchor{kind:render::Anchor::Image{path,..},..}if path=="child/image.png")));
+    assert!(ops.iter().any(|op|matches!(op,render::Op::Text{link:Some(target),..}if matches!(target.as_ref(),LinkTarget::Note{id:note,..}if *note==id("root/Sibling")))));
+}
