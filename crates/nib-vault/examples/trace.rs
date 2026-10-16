@@ -107,7 +107,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ms(start.elapsed()),
         hits.len()
     );
-    search.cancel();
+    search.cancel_and_wait()?;
     let big = h.read_note(&root.join("big.md"))?.text;
     let start = Instant::now();
     let ops = nib_core::render::render(&big, &nib_core::render::Unresolved);

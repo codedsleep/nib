@@ -203,6 +203,7 @@ fn streamed_search_walk_cancel_and_match() {
     while let Ok(e) = rx.try_recv() {
         assert!(!matches!(e, VaultEvent::Search(_)));
     }
+    search.cancel_and_wait().unwrap();
     let invalid = h.search(SearchSpec::parse("r:["));
     until(&rx, |e| {
         matches!(e, VaultEvent::Search(SearchEvent::Failed(..))).then_some(())

@@ -1,5 +1,6 @@
 //! Cancellable parallel grep and streaming recursive finder walks.
 use crate::{
+    VaultError,
     events::{RequestId, SearchEvent, SearchHit, VaultEvent, WalkEvent},
     service::{Inner, lock},
 };
@@ -34,6 +35,7 @@ impl Cancellation {
 pub struct SearchHandle {
     id: RequestId,
     cancel: Arc<Cancellation>,
+    worker: Option<std::thread::JoinHandle<()>>,
 }
 impl SearchHandle {
     /// Request identity attached to all results.
@@ -43,6 +45,17 @@ impl SearchHandle {
     /// Stop future sends before returning.
     pub fn cancel(&self) {
         self.cancel.cancel();
+    }
+    /// Cancel and join the worker for isolated CLI measurements or shutdown tools.
+    /// This blocks; UI query changes use `cancel` or drop instead.
+    pub fn cancel_and_wait(mut self) -> Result<(), VaultError> {
+        self.cancel();
+        if let Some(worker) = self.worker.take() {
+            worker
+                .join()
+                .map_err(|_| VaultError::Message("search worker panicked".into()))?;
+        }
+        Ok(())
     }
 }
 impl Drop for SearchHandle {
@@ -74,12 +87,13 @@ impl Drop for WalkHandle {
 pub(crate) fn start(inner: &Arc<Inner>, spec: SearchSpec) -> SearchHandle {
     let id = inner.request_id();
     let cancel = Arc::new(Cancellation::default());
-    let handle = SearchHandle {
+    let mut handle = SearchHandle {
         id,
         cancel: cancel.clone(),
+        worker: None,
     };
     let weak = Arc::downgrade(inner);
-    if let Err(e) = std::thread::Builder::new()
+    let worker = std::thread::Builder::new()
         .name("nib-search".into())
         .spawn(move || {
             let Some(inner) = weak.upgrade() else {
@@ -181,9 +195,13 @@ pub(crate) fn start(inner: &Arc<Inner>, spec: SearchSpec) -> SearchHandle {
                 })
             });
             cancel.send(&inner, VaultEvent::Search(SearchEvent::Done(id)));
-        })
-    {
-        inner.notice(e.to_string());
+        });
+    match worker {
+        Ok(worker) => handle.worker = Some(worker),
+        Err(e) => {
+            inner.emit(VaultEvent::Search(SearchEvent::Failed(id, e.to_string())));
+            inner.notice(e.to_string());
+        }
     }
     handle
 }
