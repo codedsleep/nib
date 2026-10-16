@@ -27,8 +27,12 @@ session() {
     shift 2
     "$run" --out "$out" --env G_DEBUG=fatal-criticals "$@" <"$checks/$name.sh" || status=$?
     if [[ $status != 0 ]]; then echo "FAIL session exited with status $status (logs: $out)"; fi
+    # One GTK warning is ignored: replacing a buffer makes GtkTextView revalidate
+    # lines inside its own snapshot, which moves the adjustment and leaves the
+    # scrollbar slider unallocated for that frame (GTK 4.22; harmless).
     if grep -En '(Gtk|Gdk|GLib|GObject|GtkSourceView)(-[[:alnum:]]+)*-(WARNING|CRITICAL)|assertion .+ failed' \
-        "$out/nib.log" >"$out/toolkit-diagnostics.log"; then
+        "$out/nib.log" | grep -v 'Trying to snapshot GtkGizmo .* without a current allocation' \
+        >"$out/toolkit-diagnostics.log"; then
         echo "FAIL toolkit warning or critical (logs: $out/toolkit-diagnostics.log)"
         cat "$out/toolkit-diagnostics.log"
         status=1
