@@ -104,21 +104,27 @@ The rules are PROMPT §5 and §23: core sees `NoteId`s and `&str`, never paths o
 
 The threat model is a single local user, no network and no auth. The asset to protect is the notes. Each item names the check or test that proves it.
 
-- [ ] **Atomic save**: temp file beside the target, `fsync`, permissions copied, `rename`. Symlinks resolved (gap 5). Proven by the kill -9 test in §26 and the round-trip check.
-- [ ] **Bytes preserved**: line endings, BOM, trailing newline and indentation style survive an open+save with no edits. Covered by a `nib-vault` test over every fixture file and a headless check.
-- [ ] **No vault pollution**: nib writes only notes, attachments and daily notes the user asked for, plus transient `.*.nib-tmp`. Never `.obsidian/`, `.trash/` or any dotfolder. A `nib-vault` test walks the fixture after a full check run and diffs it.
-- [ ] **Stale temp cleanup** only matches `.*.nib-tmp` older than 1 min, and never follows symlinks.
-- [ ] **Trash only** (D9). No code path calls `remove_file`/`remove_dir_all` on vault content. Goal C greps for it.
-- [ ] **Rename rewrites are opt-in** (`ask` default), applied with atomic writes and highest byte offset first, and open buffers are patched rather than reloaded. Covered by the rename check.
-- [ ] **External change never clobbers**: a modified buffer is never auto-reloaded and `:w` is an explicit overwrite. Covered by the external-change check.
-- [ ] **Launch guard** (D10): no executables, no `.desktop`, schemes limited to http/https/mailto. Unit tests on the classifier, plus a headless check that follows a link to `attachments/evil.sh` in the fixture.
-- [ ] **Templates never execute** anything: `{{…}}` expansion is substitution only. A unit test feeds it shell-looking input.
-- [ ] **Remote images are never fetched**: reading view shows the link text. nib makes zero network calls (Goal C checks with `strace -f -e trace=network` on a fixture run).
-- [ ] **Confinement** (D11) is set in every agent and dev entry point. Agents never touch `~/Documents/notes`.
-- [ ] **Paths stay inside the vault**: a link or `:e ../../etc/passwd` resolving outside the vault root opens nothing and shows a notice. Created and attachment paths are joined and then checked with `starts_with(root)` after canonicalisation.
-- [ ] **Crash log** holds message, backtrace, versions and vault key only, never note text or note paths beyond the panicking location.
-- [ ] **`NIB_LOG=debug`** may print note paths but never note contents.
-- [ ] **No `unsafe`** (`forbid` in all three crates), no `unwrap` outside tests or proven invariants.
+- [x] **Atomic save**: temp file beside the target, `fsync`, permissions copied, `rename`. Symlinks resolved (gap 5). Proven by the kill -9 test in §26 and the round-trip check.
+- [x] **Bytes preserved**: line endings, BOM, trailing newline and indentation style survive an open+save with no edits. Covered by a `nib-vault` test over every fixture file and a headless check.
+- [x] **No vault pollution**: nib writes only notes, attachments and daily notes the user asked for, plus transient `.*.nib-tmp`. Never `.obsidian/`, `.trash/` or any dotfolder. A `nib-vault` test walks the fixture after a full check run and diffs it.
+- [x] **Stale temp cleanup** only matches `.*.nib-tmp` older than 1 min, and never follows symlinks.
+- [x] **Trash only** (D9). No code path calls `remove_file`/`remove_dir_all` on vault content. Goal C greps for it.
+- [x] **Rename rewrites are opt-in** (`ask` default), applied with atomic writes and highest byte offset first, and open buffers are patched rather than reloaded. Covered by the rename check.
+- [x] **External change never clobbers**: a modified buffer is never auto-reloaded and `:w` is an explicit overwrite. Covered by the external-change check.
+- [x] **Launch guard** (D10): no executables, no `.desktop`, schemes limited to http/https/mailto. Unit tests on the classifier, plus a headless check that follows a link to `attachments/evil.sh` in the fixture.
+- [x] **Templates never execute** anything: `{{…}}` expansion is substitution only. A unit test feeds it shell-looking input.
+- [x] **Remote images are never fetched**: reading view shows the link text. nib makes zero network calls (Goal C checks with `strace -f -e trace=network` on a fixture run).
+- [x] **Confinement** (D11) is set in every agent and dev entry point. Agents never touch `~/Documents/notes`.
+- [x] **Paths stay inside the vault**: a link or `:e ../../etc/passwd` resolving outside the vault root opens nothing and shows a notice. Created and attachment paths are joined and then checked with `starts_with(root)` after canonicalisation.
+- [x] **Crash log** holds message, backtrace, versions and vault key only, never note text or note paths beyond the panicking location.
+- [x] **`NIB_LOG=debug`** may print note paths but never note contents.
+- [x] **No `unsafe`** (`forbid` in all three crates), no `unwrap` outside tests or proven invariants.
+
+Phase 10 evidence: `CODE-REVIEW.md`, guarded backend tests (including 200
+SIGKILLs), all relevant headless checks, the isolated real-vault manifest, and a
+strace reading run with zero Internet socket calls. Crash reports deliberately
+omit panic payload text to avoid recording note contents. The write policy
+assumes a single local user, not an adversarial concurrent filesystem writer.
 
 ## 6. Switch-over (owner, after Goal C acceptance)
 

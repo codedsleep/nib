@@ -286,13 +286,13 @@ Goal B starts by reading HANDOFF-A and skimming Goal A's code. Anything wrong go
 
 #### Phase 10 — Review, harden, ship
 
-- [ ] **10.1 Review.** Read SCOPE, both hand-offs and the full diff since the initial commit. Check every task's Accept line against the code, act on HANDOFF-B's Goal A findings, and work through DISCOVERY §5 (`grep` for `remove_file`/`remove_dir_all` on vault paths; `strace -f -e trace=network` on a fixture run shows no network sockets; launch guard; guard coverage). Fix in place, with findings and fixes in §10. **Accept:** §10 review log; `check.sh` and every UI check green.
-- [ ] **10.2 Man page and desktop data.** `data/nib.1.scd` built with `scdoc`, listing every invocation form, the key tables from the registry (generated, not hand-written), files and environment variables (`NIB_LOG`, `NIB_TRACE`, `NIB_ALLOW_ROOTS`, `NIB_GTK_THEME`). **Accept:** `man ./nib.1` renders.
-- [ ] **10.3 `install.sh`** (D13). Uses `gh release download`, verifies `SHA256SUMS`, and installs bin, desktop file, icon, man page and style schemes into `~/.local` (or `--prefix`); supports `--version vX`, `--uninstall` and `-y`; checks for the GtkSourceView 5 runtime and prints the `dnf` line. The `scripts/install.sh` local build does the same from a checkout. **Accept:** a dry run into a temp prefix on ws; uninstall leaves nothing behind.
+- [x] **10.1 Review.** Read SCOPE, both hand-offs and the full diff since the initial commit. Check every task's Accept line against the code, act on HANDOFF-B's Goal A findings, and work through DISCOVERY §5 (`grep` for `remove_file`/`remove_dir_all` on vault paths; `strace -f -e trace=network` on a fixture run shows no network sockets; launch guard; guard coverage). Fix in place, with findings and fixes in §10. **Accept:** §10 review log; `check.sh` and every UI check green.
+- [x] **10.2 Man page and desktop data.** `data/nib.1.scd` built with `scdoc`, listing every invocation form, the key tables from the registry (generated, not hand-written), files and environment variables (`NIB_LOG`, `NIB_TRACE`, `NIB_ALLOW_ROOTS`, `NIB_GTK_THEME`). **Accept:** `man ./nib.1` renders.
+- [x] **10.3 `install.sh`** (D13). Uses `gh release download`, verifies `SHA256SUMS`, and installs bin, desktop file, icon, man page and style schemes into `~/.local` (or `--prefix`); supports `--version vX`, `--uninstall` and `-y`; checks for the GtkSourceView 5 runtime and prints the `dnf` line. The `scripts/install.sh` local build does the same from a checkout. **Accept:** a dry run into a temp prefix on ws; uninstall leaves nothing behind.
 - [ ] **10.4 `release.yml`** (D14, O-2). `v*` tags build x86_64 on `ubuntu-24.04`, plus aarch64 if the arm runner is free for private repos (otherwise drop it and note that in the README), and upload a release with `SHA256SUMS`. **Accept:** the first tag run is green.
-- [ ] **10.5 README and CHANGELOG.** Pitch, features, install (gh), the P§17 key tables, "Coming from Obsidian", "Vim" limits (from §10 notes), and the performance table. `CHANGELOG.md` 0.1.0 in Keep-a-Changelog form. **Accept:** committed.
-- [ ] **10.6 Thinkpad numbers** (D6, O-3). Run `NIB_TRACE=1` on the fixture on the thinkpad (ssh + headless `cage` if that works, else ask the owner to paste a `dev-run.sh` run). Fill §7's thinkpad column and the README table. **Accept:** every budget met, or the miss is recorded with its cause.
-- [ ] **10.7 Acceptance.** `cp -a ~/Documents/notes ~/.cache/nib-acceptance && git -C … init && commit` (the only time an agent touches the vault, D11), then run §8 there. **Accept:** §8 ticked or each failure explained.
+- [x] **10.5 README and CHANGELOG.** Pitch, features, install (gh), the P§17 key tables, "Coming from Obsidian", "Vim" limits (from §10 notes), and the performance table. `CHANGELOG.md` 0.1.0 in Keep-a-Changelog form. **Accept:** committed.
+- [x] **10.6 Thinkpad numbers** *(Backend measured; GUI deferred by owner on 2026-10-16.)* (D6, O-3). Run `NIB_TRACE=1` on the fixture on the thinkpad (ssh + headless `cage` if that works, else ask the owner to paste a `dev-run.sh` run). Fill §7's thinkpad column and the README table. **Accept:** every budget met, or the miss is recorded with its cause.
+- [x] **10.7 Acceptance.** `cp -a ~/Documents/notes ~/.cache/nib-acceptance && git -C … init && commit` (the only time an agent touches the vault, D11), then run §8 there. **Accept:** §8 ticked or each failure explained.
 - [ ] **10.8 Release.** Bump to `0.1.0`, commit `Release 0.1.0`, annotated tag `v0.1.0`, push, watch the release run, and run `install.sh -y --version v0.1.0` on ws. Hand the switch-over (DISCOVERY §6) to the owner. **Accept:** release published; the installed `nib --version` reports `0.1.0`.
 
 ---
@@ -303,19 +303,19 @@ Each row lists the thinkpad budget (P§21, D6), the workstation target (≤ 60 %
 
 | Metric | Thinkpad budget | ws target | Proven in | ws measured | thinkpad measured |
 |---|---|---|---|---|---|
-| `parse_note`, 5 KB note | ≤ 100 µs | ≤ 60 µs | 2.2 / 4.3 | 13.582 µs p50 / 19.246 µs p99 | |
-| `completion_trigger` key path | ≤ 50 µs | ≤ 30 µs | 2.8 / 6.5 | 0.615 µs (core); in the app, line read + trigger + matcher query per keystroke: 7.3 µs median, 17.6 µs p95, 40 µs worst of 107 (release) | |
-| Render ops build, `big.md` | — | ≤ 12 ms | 2.7 / 4.3 | 7.367 ms | |
-| Index ready, 3 000 notes | ≤ 400 ms | ≤ 240 ms | 3.4 / 4.3 | 100.947 ms (3,058 notes; 40.2 MB fixture) | |
-| Index ready, 30 000 notes | ≤ 4 s | ≤ 2.4 s | 3.4 | 417.603 ms (30,058 notes) | |
-| Search, first page | ≤ 100 ms | ≤ 60 ms | 3.5 / 7.7 | 0.714 ms (first streamed batch); in the finder, keystroke to first rows on screen 4.0 ms median, 5.5 ms p95 | |
-| Matcher first snapshot | ≤ 10 ms | ≤ 6 ms | 3.6 / 7.7 | 0.196 ms; in the switcher, keystroke to ranked rows on screen 5.9 ms median, 10.4 ms p95 (includes the main loop finishing the keystroke's own frame) | |
-| Start → window mapped, note editable | ≤ 150 ms | ≤ 90 ms | 5.7 | **163 ms warm (miss)**; nib's own work before `present()` ≈ 10 ms, the rest is exec ≈ 20, GTK init ≈ 30, Vulkan renderer init ≈ 110 (RTX 4090 + llvmpipe ICDs). Cold first start in a fresh headless bus 420–440 ms (portal activation). | |
-| Open a 10 000-line note, first paint | ≤ 16 ms | ≤ 10 ms | 5.6 | 7.2–9.0 ms typical, outliers to 15 ms (two-step insert; whole `set_text` was 14–16 ms) | |
-| Switcher popover visible | ≤ 30 ms | ≤ 18 ms | 7.6 | 8.4 ms median, 13.4 ms p90, one 20 ms outlier of 10 (an overlay, not a popover: §9) | |
-| Reading render, `big.md`, with insertion | ≤ 50 ms | ≤ 30 ms | 8.2 | first 64 KB on screen in 4.4–7.1 ms; the whole note (80 000 ops, 30 000 tag runs) replaces it ≈ 76 ms later in idle slices, worst frame 10.4 ms. One synchronous pass measured 49–61 ms. | |
-| Files column, 20 000 entries | 60 fps | no frame > 16 ms | 5.5 | worst frame 7.9 ms, median 1.0–1.5 ms over j, held j, Ctrl+F, Ctrl+D, G, gg | |
-| Idle RSS, fixture, 3 tabs | ≤ 90 MB | ≤ 90 MB | 9.11 / 10.6 | **196–215 MB (miss)**, PSS 110 MB; 192 MB already before the index and the other tabs, which add ≈ 4 MB. Vulkan maps 133 MB of NVIDIA driver files; `GSK_RENDERER=cairo` gives 96 MB (41 MB anonymous), `ngl` 261 MB. | |
+| `parse_note`, 5 KB note | ≤ 100 µs | ≤ 60 µs | 2.2 / 4.3 | 13.582 µs p50 / 19.246 µs p99 | 15.381 µs p50 / 22.619 µs p99 |
+| `completion_trigger` key path | ≤ 50 µs | ≤ 30 µs | 2.8 / 6.5 | 0.615 µs (core); in the app, line read + trigger + matcher query per keystroke: 7.3 µs median, 17.6 µs p95, 40 µs worst of 107 (release) | 0.841 µs core; GUI pending by owner decision |
+| Render ops build, `big.md` | — | ≤ 12 ms | 2.7 / 4.3 | 7.257 ms (Phase 10) | 17.303 ms (no GTK insertion) |
+| Index ready, 3 000 notes | ≤ 400 ms | ≤ 240 ms | 3.4 / 4.3 | 100.947 ms (3,058 notes; 40.2 MB fixture) | 203.630 ms (3,058 notes) |
+| Index ready, 30 000 notes | ≤ 4 s | ≤ 2.4 s | 3.4 | 417.603 ms (30,058 notes) | 1,686.088 ms (30,058 notes) |
+| Search, first page | ≤ 100 ms | ≤ 60 ms | 3.5 / 7.7 | 0.714 ms (first streamed batch); in the finder, keystroke to first rows on screen 4.0 ms median, 5.5 ms p95 | 1.255 ms first backend batch; GUI pending |
+| Matcher first snapshot | ≤ 10 ms | ≤ 6 ms | 3.6 / 7.7 | 0.196 ms; in the switcher, keystroke to ranked rows on screen 5.9 ms median, 10.4 ms p95 (includes the main loop finishing the keystroke's own frame) | 0.267 ms core; GUI pending |
+| Start → window mapped, note editable | ≤ 150 ms | ≤ 90 ms | 5.7 | **178.940 ms warm (Phase 10; miss)**; nib's own work before `present()` ≈ 10 ms, the rest is exec ≈ 20, GTK init ≈ 30, Vulkan renderer init ≈ 110 (RTX 4090 + llvmpipe ICDs). Cold first start in a fresh headless bus 420–440 ms (portal activation). | GUI pending by owner decision |
+| Open a 10 000-line note, first paint | ≤ 16 ms | ≤ 10 ms | 5.6 | **14.555 ms final Phase 10 run (miss vs 10 ms ws target)**; Phase 5 measured 7.2–9.0 ms typical, with outliers to 15 ms (two-step insert) | GUI pending by owner decision |
+| Switcher popover visible | ≤ 30 ms | ≤ 18 ms | 7.6 | 8.4 ms median, 13.4 ms p90, one 20 ms outlier of 10 (an overlay, not a popover: §9) | GUI pending by owner decision |
+| Reading render, `big.md`, with insertion | ≤ 50 ms | ≤ 30 ms | 8.2 | Phase 10 first render **18.910 ms**, complete render **84.248 ms (miss)**; Phase 8 first paint 4.4–7.1 ms, complete ≈76 ms. 80,000 ops / 30,000 tag runs, applied in idle slices; original worst frame 10.4 ms. | GUI pending by owner decision |
+| Files column, 20 000 entries | 60 fps | no frame > 16 ms | 5.5 | worst frame 7.9 ms, median 1.0–1.5 ms over j, held j, Ctrl+F, Ctrl+D, G, gg | 44.088 ms backend listing; GUI frame timing pending |
+| Idle RSS, fixture, 3 tabs | ≤ 90 MB | ≤ 90 MB | 9.11 / 10.6 | **264.782 MB RSS (Phase 10; miss)**, PSS 158.298 MB, anonymous 81.646 MB; 120.963 MB RSS in graphics-library mappings. One indexed tab was 260.047 MB; two additional tabs added 4.735 MB. Phase 9 measured 196–215 MB; its renderer comparisons were cairo 96 MB / ngl 261 MB. | GUI pending by owner decision |
 
 ---
 
@@ -323,20 +323,20 @@ Each row lists the thinkpad budget (P§21, D6), the workstation target (≤ 60 %
 
 From P§26, adjusted by discovery:
 
-- [ ] After a scripted session of edits, `git status` in the acceptance vault shows only the notes and attachments touched, and nothing under `.obsidian/` (the owner repeats this after a real week, D2).
-- [ ] Every §7 budget met on the thinkpad and printed by `NIB_TRACE=1`; the numbers are in the README.
-- [ ] Every P§17 key works as the table says (minus `D`, D9); `F1` lists them from the registry.
-- [ ] Every P§17 `:` command exists, plus `:paste-image`.
-- [ ] With `editor.vim = false`, every feature stays reachable.
-- [ ] Renaming a note that 14 others link to prompts, rewrites all 14 with aliases and headings kept, and patches open buffers with undo intact.
-- [ ] `kill -9` during a save leaves the note as the old or the new bytes; a stray `.nib-tmp` is cleaned on the next open.
-- [ ] A screenshot pasted from `grim`/`wl-copy` is saved as an attachment, `![[…]]` is inserted, and it renders in reading view.
-- [ ] A file yanked in trek pastes with `p` in nib's column, and the reverse.
-- [ ] `scripts/check.sh` green; every UI check green; `cargo clippy` clean with pedantic.
-- [ ] Idle RSS with the fixture open is under 90 MB (or the measured number and its cause are recorded).
-- [ ] DISCOVERY §5 security checklist fully ticked.
-- [ ] Following a link to an executable attachment is refused; `file:`/`javascript:` links don't launch.
-- [ ] A non-UTF-8 note opens read-only and can't be saved; CRLF, BOM and mixed-ending notes round-trip byte-exact.
+- [x] After a scripted session of edits, `git status` in the acceptance vault shows only the notes and attachments touched, and nothing under `.obsidian/` (the owner repeats this after a real week, D2).
+- [ ] Every §7 budget met on the thinkpad and printed by `NIB_TRACE=1`; the numbers are in the README. **Deferred:** backend budgets pass; GUI measurements are pending by owner decision (2026-10-16), because GTK/GtkSourceView/cage are not installed.
+- [x] Every P§17 key works as the table says (minus `D`, D9); `F1` lists them from the registry.
+- [x] Every P§17 `:` command exists, plus `:paste-image`.
+- [x] With `editor.vim = false`, every feature stays reachable.
+- [x] Renaming a note that 14 others link to prompts, rewrites all 14 with aliases and headings kept, and patches open buffers with undo intact.
+- [x] `kill -9` during a save leaves the note as the old or the new bytes; a stray `.nib-tmp` is cleaned on the next open.
+- [x] A screenshot pasted from `grim`/`wl-copy` is saved as an attachment, `![[…]]` is inserted, and it renders in reading view.
+- [x] A file yanked in trek pastes with `p` in nib's column, and the reverse.
+- [x] `scripts/check.sh` green; every UI check green; `cargo clippy` clean with pedantic.
+- [x] Idle RSS with the fixture open is under 90 MB (or the measured number and its cause are recorded).
+- [x] DISCOVERY §5 security checklist fully ticked.
+- [x] Following a link to an executable attachment is refused; `file:`/`javascript:` links don't launch.
+- [x] A non-UTF-8 note opens read-only and can't be saved; CRLF, BOM and mixed-ending notes round-trip byte-exact.
 
 ---
 
@@ -375,6 +375,8 @@ The decisions so far are D1–D17 (DISCOVERY §1), G1–G8 (DISCOVERY §2) and S
 | 2026-10-16 | Claude | `:edit` alone returns a tab to its source view; `:edit NOTE` and `:e NOTE` still open a note. `:goto N` (palette "Go to a line") exists for vim-off use. | P§17 lists `edit` (source mode) beside vim's `:e`; vim-off has no `:N`. |
 
 | 2026-10-16 | Codex | Core depends on `nucleo-matcher`, vault on `nucleo`; the dependency check permits rayon only transitively through nucleo. | nucleo 0.5 unconditionally depends on rayon; the specified matcher cannot satisfy a blanket transitive ban. Core uses only pure pattern machinery and never starts matcher threads. |
+
+| 2026-10-16 | Codex / owner | Measure Thinkpad backend over SSH; defer GUI measurements as requested by the owner. Keep x86_64-only releases under D14. | GUI runtime is absent on the Thinkpad; private-repo ARM runners consume included/billed minutes. [GitHub runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-private-repositories). |
 
 ---
 
@@ -497,12 +499,23 @@ Commits: the tabs/session/notes/attachments/config commit, the checks commit, `H
 - Bugs found by the Phase 9 checks and fixed: the `RefCell` re-entrancy when detaching vim (its bar-text notify read the cell being emptied: a panic at window close); vim kept marks into the views as the window was destroyed (now detached at close); the pointer checks' coordinates moved with the always-shown tab bar.
 - Full suite at hand-off: `run-all.sh --all`, 24 checks, all green (≈ 6 min).
 
+### Phase 10 — 2026-10-16, Codex
+
+- **Review and fixes (10.1).** `CODE-REVIEW.md` records nine confirmed findings and their fixes: unsafe buffer replacement/closing, watcher-delay autosave overwrites, rename Skip/Keep both results, reading-task conflict saves, tab eviction/dirty-tab limits, relative and ambiguous attachment links, missing CI fixture generation, ignored logging levels and unrestored cursor columns. Atomic commits each carry the corresponding implementation and regression checks.
+- **Goal A handoff findings.** The nested-list fix and snapshots remain. The final backend trace reports open **0.058 ms**, 3,058-note index **55.879 ms**, parse **5.242/10.127 µs p50/p99**, core completion **0.306 µs**, search first batch **0.636 ms**, 20k listing **16.319 ms** and matcher **0.270 ms**. Render ops re-measured at **7.257 ms** on the workstation (80,000 ops), **17.303 ms** on the Thinkpad. Nucleo's per-matcher worker pool is retained: measured core matcher latency passes on both machines. `OpSummary.created` now also reports the actual Rename destination, allowing the UI to honor conflict outcomes.
+- **Safety review.** All `remove_file` calls in application/vault code remove owned temporary files; no `remove_dir_all` or permanent-delete path exists. Guard/refusal, symlink, permissions, UTF-8/format preservation, stale-plan and 200 SIGKILL tests pass. A full reading UI check under `strace -f -e trace=network` made **zero AF_INET/AF_INET6 socket calls** while displaying twenty local images and a remote image placeholder. Unix IPC and GLib's local netlink route monitor remain expected. The strace RPM was downloaded/extracted under `/tmp` without changing system packages.
+- **Manual/install/release preparation (10.2–10.5).** Generated registry tables remain authoritative. Corrected the manual's profile syntax, built it with scdoc, rendered it with man, and validated the desktop file. Temp-prefix payload and authenticated-download-path tests verify checksums, tamper refusal, spaces in prefixes and clean uninstall. Release CI now generates its required fixture, checks generated/API docs, and tests installers before publishing.
+- **Final verification.** `scripts/check.sh` green for **0.1.0**: **68 passed / 4 ignored** (two opt-in timing tests and two subprocess helpers), pedantic clippy/doc warnings clean, dependency boundaries clean, package/install tests green, release window mapped. `run-all.sh --all` green: **27 checks / 312 assertions**, including the new unsaved/tab-limit/rename-conflict cases and expanded external/task/session checks. Full suite approximately seven minutes; the normal check retains smoke-only UI coverage.
+- **Final workstation GUI trace.** After the suite, three tabs used **264.782 MB RSS**, **158.298 MB PSS**; one indexed tab already used **260.047 MB**, and graphics-library mappings accounted for **120.963 MB RSS**. The run's `big.md` source first paint was **14.555 ms** (miss vs 10 ms workstation target, within the nominal 16 ms laptop budget without establishing laptop behavior). Reading first/full render **18.910/84.248 ms**; full render misses. Release smoke warm start **178.940 ms**, cold private-bus **384.038 ms** (startup target missed). These replace earlier figures for the final run; GTK's NVIDIA Vulkan startup/mappings and native allocations remain material, and nib does not override the renderer. Earlier first-paint and RSS values were lower; no claim is made that one development sample represents every run.
+- **Thinkpad (10.6).** SSH to the i5-8350U worked. Copied the release `trace`/`mkfixture` tools into `~/.cache/nib-phase10/bin`, confined writes there, generated separate 3k/30k fixtures and recorded §7's backend numbers. 3,058-note index **203.630 ms**; 30,058-note index **1,686.088 ms**; parse **15.381/22.619 µs p50/p99**; completion core **0.841 µs**; search first batch **1.255 ms**; matcher **0.267 ms**. No GUI measurements are inferred from these. The owner explicitly requested GUI measurements remain pending rather than installing the missing packages.
+- **Acceptance (10.7).** Copied the live folder once to `~/.cache/nib-acceptance/phase10-20261016/vault` and committed a baseline; an existing acceptance directory/test note was preserved. `scripts/agent/acceptance.sh` verifies edit/save, a fourteen-source rename preserving aliases/headings, open-buffer undo, pasted image naming/embed/rendering, and full file hashes/modes/symlinks including ignored `.obsidian` entries. Only the sixteen requested notes/attachment under `nib-phase10-check/` changed. nib never opened or watched the live folder. Safety and broad feature checks run on deterministic fixture copies; native chooser/drop/activation-token QA and a week of daily use remain with the owner.
+
 ---
 
 ## 11. Open questions
 
 - **O-1** Rename the repo to `codedsleep/nib` and the folder to `~/code/nib`? This is the owner's call; best done before Goal A starts.
-- **O-2** aarch64 release on a private repo: Goal C decides (10.4).
-- **O-3** Thinkpad trace over ssh + headless `cage`: Goal C tries it (10.6).
+- **O-2 resolved:** release x86_64 only. Standard ARM private-repo runners consume included/billed Actions minutes rather than being unconditionally free (D14); source builds remain available.
+- **O-3:** Thinkpad backend traces completed over SSH on the i5-8350U (8 logical CPUs). GUI measurements deferred by owner decision on 2026-10-16; runtime GTK/GtkSourceView/cage are absent. Artifacts: `~/.cache/nib-phase10/` on the Thinkpad.
 - **O-5** (Goal B, 2026-10-16) Idle RSS on this workstation is 196–215 MB against the 90 MB target; ≈ 192 MB of it exists before the index or a second tab, from GTK's Vulkan renderer on NVIDIA (133 MB of mapped driver files; `cairo` gives 96 MB). nib's index and three tabs add ≈ 4 MB. The thinkpad (Intel, Mesa) is the judge; renderer policy is the owner's call, as for O-4.
 - **O-4** (Goal B, 2026-10-16) The workstation misses the 90 ms start target: 163 ms warm, of which ≈ 110 ms is GTK's Vulkan renderer initialising on the RTX 4090 (plus the llvmpipe ICD). nib's own pre-`present()` work is ≈ 10 ms. Accept the workstation number if the thinkpad meets ≤ 150 ms, or decide on a renderer policy (nib does not set `GSK_RENDERER` by itself).

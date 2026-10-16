@@ -34,7 +34,7 @@ Noninteractive installation requires `-y`.
 
 Releases currently contain x86_64 only. GitHub's ARM runners for private
 repositories consume billed/included Actions minutes; there is no unconditional
-free ARM runner, so ARM users build from source.
+free ARM runner, so ARM users build from source. See [GitHub runner billing](https://docs.github.com/en/actions/reference/runners/github-hosted-runners#standard-github-hosted-runners-for-private-repositories).
 
 ```sh
 sudo dnf install gcc pkgconf-pkg-config gtk4-devel gtksourceview5-devel scdoc
@@ -234,25 +234,32 @@ and filters the same actions in the app. Files-column keys apply in that column.
 
 Release builds, warm caches, deterministic 3,058-note / 40.2 MB fixture.
 Workstation figures are development measurements; the Thinkpad is the target
-machine. ThinkPad measurements are pending its GTK/GtkSourceView/cage setup.
+machine. Backend measurements run over SSH on the Thinkpad; GUI measurements
+are deferred by owner decision until GTK/GtkSourceView/cage are available there.
+Workstation rows combine the Phase 10 backend trace with recorded UI measurements
+from Phases 5–10; GUI figures are development measurements, not CI assertions.
 
-| Metric | Thinkpad budget | Workstation measured |
-|---|---|---|
-| Parse 5 KB note | 100 µs | 13.6 µs median / 19.2 µs p99 |
-| Completion key path | 50 µs | 7.3 µs median / 17.6 µs p95 |
-| Index 3,058 / 30,058 notes | 400 ms / 4 s | 101 ms / 418 ms |
-| Search first rows visible | 100 ms | 4.0 ms median |
-| Switcher visible / ranked rows | 30 ms / 10 ms | 8.4 ms / 5.9 ms median |
-| Start to window mapped | 150 ms | 163 ms warm; misses 90 ms workstation target |
-| Open 10,000-line note, first paint | 16 ms | 7–9 ms |
-| Reading view, first part / whole note | 50 ms | 4.4–7.1 ms / about 76 ms |
-| Files column, 20,000 entries | 60 fps | 7.9 ms worst frame |
-| Idle RSS, three tabs | 90 MB | pending final trace |
+| Metric | Thinkpad budget | Workstation measured | Thinkpad measured |
+|---|---|---|---|
+| Parse 5 KB note | 100 µs | 5.24 µs median / 10.13 µs p99 | 15.4 µs median / 22.6 µs p99 |
+| Completion key path | 50 µs | 7.3 µs median / 17.6 µs p95 (app) | 0.84 µs (core); GUI pending |
+| Index 3,058 / 30,058 notes | 400 ms / 4 s | 55.9 ms / 418 ms | 204 ms / 1.69 s |
+| Search first rows visible | 100 ms | 4.0 ms median (GUI) | 1.26 ms first backend batch; GUI pending |
+| Switcher visible / ranked rows | 30 ms / 10 ms | 8.4 ms / 5.9 ms median | 0.27 ms core matcher; GUI pending |
+| Start to window mapped | 150 ms | 179 ms warm; misses 90 ms workstation target | GUI pending |
+| Open 10,000-line note, first paint | 16 ms | 14.6 ms final run; misses 10 ms workstation target | GUI pending |
+| Reading view, first part / whole note | 50 ms | 18.9 ms / 84.2 ms final run | 17.3 ms render ops only; GUI pending |
+| Files column, 20,000 entries | 60 fps | 7.9 ms worst frame | 44.1 ms backend listing; GUI pending |
+| Idle RSS, three tabs | 90 MB | 264.8 MB; misses budget (NVIDIA Vulkan) | GUI pending |
 
 The workstation startup miss is mainly GTK Vulkan initialization (about 110 ms,
 RTX 4090 plus llvmpipe ICDs); nib leaves renderer selection to GTK. Large reading
 views render the first 64 KB promptly and finish in idle slices; the full-note
-latency exceeds the original synchronous-render budget. See
+latency exceeds the original synchronous-render budget. The final three-tab run
+used 264.8 MB RSS (158.3 MB PSS): 121.0 MB RSS came from graphics-library mappings;
+one indexed tab already used 260.0 MB, and the next two added 4.7 MB. The final
+10,000-line source first paint was 14.6 ms, above the 10 ms workstation target.
+These misses are recorded rather than treated as passing budgets. See
 [scope and measurements](.planning/SCOPE.md) for methods and exceptions.
 
 ## Development
@@ -269,6 +276,11 @@ python3 scripts/generate-docs.py     # regenerate README keys and man-page sourc
 
 Agents and development runs use fixtures. Phase 10 alone may copy the notes vault
 into an isolated acceptance directory; the live vault is never edited or watched.
+`scripts/agent/acceptance.sh COPY` verifies an isolated, committed copy below
+`~/.cache/nib-acceptance/`, including a full before/after file manifest. Phase 10
+found and fixed buffer-loss, rename-conflict and link-writing issues; see
+[the review](CODE-REVIEW.md) and [owner handoff](HANDOFF-C.md).
+
 Pure logic lives in nib-core; I/O and workers in nib-vault; GTK widgets in nib.
 See [SCOPE](.planning/SCOPE.md), [Goal A](HANDOFF-A.md) and [Goal B](HANDOFF-B.md).
 
