@@ -128,7 +128,7 @@ impl Panel {
                 }
             })),
         );
-        links_list.set_single_click_activate(true);
+        crate::app::click_activates(&links_list);
         let outline = gio::ListStore::new::<glib::BoxedAnyObject>();
         let outline_selection = gtk::SingleSelection::new(Some(outline.clone()));
         outline_selection.set_autoselect(false);
@@ -142,7 +142,7 @@ impl Panel {
                 }
             })),
         );
-        outline_list.set_single_click_activate(true);
+        crate::app::click_activates(&outline_list);
         let stack = gtk::Stack::new();
         stack.set_vhomogeneous(false);
         let scrolled = |child: &gtk::ListView| {

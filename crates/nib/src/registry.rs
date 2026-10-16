@@ -1,7 +1,8 @@
 //! The action registry (P§13, §17): one table drives the window shortcuts,
 //! the files-column keys, the `:` command router, the palette and `F1`.
-use crate::{app::App, commands, editor, files, gtk, launch, panel};
+use crate::{app::App, commands, editor, fileops, files, finder, gtk, launch, panel};
 use gtk::prelude::*;
+use nib_core::settings::Sort;
 use std::rc::Rc;
 
 /// Where an entry's keys are live.
@@ -108,6 +109,60 @@ pub static ENTRIES: &[Entry] = &[
         &["e!"],
         commands::reload,
     ),
+    entry(
+        "rename",
+        "Rename (rewriting links)",
+        C,
+        &[],
+        &["rename"],
+        fileops::rename_command,
+    ),
+    entry(
+        "trash",
+        "Move to the trash",
+        C,
+        &[],
+        &["trash"],
+        fileops::trash_command,
+    ),
+    // ---- finder ----
+    entry(
+        "switcher",
+        "Open a note (quick switcher)",
+        W,
+        &["<Alt>o"],
+        &["o", "open"],
+        |app, arg| {
+            finder::open(app, finder::Switcher, arg);
+        },
+    ),
+    entry(
+        "palette",
+        "Command palette",
+        W,
+        &["<Alt>p"],
+        &[],
+        |app, _| {
+            finder::open(app, finder::Palette, "");
+        },
+    ),
+    entry(
+        "search",
+        "Search the vault",
+        W,
+        &["<Alt>f"],
+        &["find"],
+        |app, arg| {
+            finder::open(app, finder::Search, arg);
+        },
+    ),
+    entry("tag", "Notes by tag", C, &[], &["tag"], |app, arg| {
+        if arg.is_empty() {
+            finder::open(app, finder::Tags, "");
+        } else {
+            finder::open(app, finder::TagNotes(arg.to_owned()), "");
+        }
+    }),
     // ---- editor chords ----
     entry(
         "follow",
@@ -175,6 +230,16 @@ pub static ENTRIES: &[Entry] = &[
         &["F8"],
         &[],
         |app, _| panel::toggle(app),
+    ),
+    entry(
+        "parent-column",
+        "Show or hide the parent column",
+        W,
+        &["F7"],
+        &[],
+        |app, _| {
+            app.files.toggle_parent(app);
+        },
     ),
     entry(
         "backlinks",
@@ -335,6 +400,20 @@ pub static ENTRIES: &[Entry] = &[
         },
     ),
     entry(
+        "files-open-tab",
+        "Open in a new tab",
+        F,
+        &["O"],
+        &[],
+        |app, _| app.files.open_new_tab(app),
+    ),
+    entry("files-back", "Previous folder", F, &["H"], &[], |app, _| {
+        app.files.history(app, true);
+    }),
+    entry("files-forward", "Next folder", F, &["L"], &[], |app, _| {
+        app.files.history(app, false);
+    }),
+    entry(
         "files-mark",
         "Select or unselect, then step down",
         F,
@@ -370,11 +449,238 @@ pub static ENTRIES: &[Entry] = &[
     ),
     entry(
         "files-clear",
-        "Clear the selection",
+        "Clear the selection and the filter",
         F,
         &["<Esc>"],
         &[],
-        |app, _| app.files.clear_marks(app),
+        |app, _| {
+            app.files.escape(app);
+        },
+    ),
+    entry(
+        "files-yank",
+        "Yank (copy) to the clipboard",
+        F,
+        &["y"],
+        &[],
+        |app, _| fileops::yank(app, false),
+    ),
+    entry(
+        "files-cut",
+        "Cut to the clipboard",
+        F,
+        &["x"],
+        &[],
+        |app, _| fileops::yank(app, true),
+    ),
+    entry("files-paste", "Paste here", F, &["p"], &[], |app, _| {
+        fileops::paste(app, false);
+    }),
+    entry(
+        "files-paste-over",
+        "Paste here, replacing existing names",
+        F,
+        &["P"],
+        &[],
+        |app, _| {
+            fileops::paste(app, true);
+        },
+    ),
+    entry(
+        "files-unyank",
+        "Forget the yank",
+        F,
+        &["Y"],
+        &[],
+        |app, _| fileops::unyank(app),
+    ),
+    entry(
+        "files-trash",
+        "Move to the trash",
+        F,
+        &["d"],
+        &[],
+        |app, _| fileops::trash(app, ""),
+    ),
+    entry(
+        "files-create",
+        "Create a note (name/ for a folder)",
+        F,
+        &["a"],
+        &[],
+        |app, _| fileops::create(app),
+    ),
+    entry(
+        "files-rename",
+        "Rename (rewriting links)",
+        F,
+        &["r"],
+        &[],
+        |app, _| fileops::rename(app, ""),
+    ),
+    entry(
+        "files-find",
+        "Find in the list",
+        F,
+        &["/"],
+        &[],
+        |app, _| app.files.open_prompt(Some(false)),
+    ),
+    entry(
+        "files-find-back",
+        "Find backwards",
+        F,
+        &["?"],
+        &[],
+        |app, _| app.files.open_prompt(Some(true)),
+    ),
+    entry("files-next", "Next match", F, &["n"], &[], |app, _| {
+        app.files.find_next(false, false);
+    }),
+    entry(
+        "files-previous",
+        "Previous match",
+        F,
+        &["N"],
+        &[],
+        |app, _| app.files.find_next(true, false),
+    ),
+    entry(
+        "files-filter",
+        "Filter the list",
+        F,
+        &["f"],
+        &[],
+        |app, _| app.files.open_prompt(None),
+    ),
+    entry(
+        "files-finder",
+        "Fuzzy-find below this folder",
+        F,
+        &["z"],
+        &[],
+        |app, _| {
+            finder::open(app, finder::Walk(app.files.folder()), "");
+        },
+    ),
+    entry(
+        "files-hidden",
+        "Show or hide hidden files",
+        F,
+        &["."],
+        &[],
+        |app, _| app.files.toggle_hidden(app),
+    ),
+    entry(
+        "files-sort-name",
+        "Sort by name",
+        F,
+        &[",n"],
+        &[],
+        |app, _| app.files.sort_by(app, Sort::Name),
+    ),
+    entry(
+        "files-sort-modified",
+        "Sort by modified time, showing ages",
+        F,
+        &[",m"],
+        &[],
+        |app, _| {
+            app.files.sort_by(app, Sort::Modified);
+        },
+    ),
+    entry(
+        "files-sort-reverse",
+        "Reverse the order",
+        F,
+        &[",r"],
+        &[],
+        |app, _| app.files.reverse(app),
+    ),
+    entry(
+        "files-copy-path",
+        "Copy the absolute path",
+        F,
+        &["cp"],
+        &[],
+        |app, _| fileops::copy_text(app, 'p'),
+    ),
+    entry(
+        "files-copy-name",
+        "Copy the name",
+        F,
+        &["cn"],
+        &[],
+        |app, _| fileops::copy_text(app, 'n'),
+    ),
+    entry(
+        "files-copy-link",
+        "Copy a [[wikilink]]",
+        F,
+        &["cl"],
+        &[],
+        |app, _| fileops::copy_text(app, 'l'),
+    ),
+    entry(
+        "files-copy-relative",
+        "Copy the vault-relative path",
+        F,
+        &["cr"],
+        &[],
+        |app, _| {
+            fileops::copy_text(app, 'r');
+        },
+    ),
+    entry(
+        "files-go-root",
+        "Go to the vault root",
+        F,
+        &["gh"],
+        &[],
+        |app, _| app.files.go_to(app, ""),
+    ),
+    entry(
+        "files-go-daily",
+        "Go to the daily folder",
+        F,
+        &["gd"],
+        &[],
+        |app, _| {
+            let rel = app.config.borrow().vault.daily_folder.clone();
+            app.files.go_to(app, &rel);
+        },
+    ),
+    entry(
+        "files-go-attachments",
+        "Go to the attachments folder",
+        F,
+        &["ga"],
+        &[],
+        |app, _| {
+            let rel = app.config.borrow().vault.attachments.clone();
+            app.files.go_to(app, &rel);
+        },
+    ),
+    entry(
+        "files-go-templates",
+        "Go to the templates folder",
+        F,
+        &["gt"],
+        &[],
+        |app, _| {
+            let rel = app.config.borrow().vault.templates.clone();
+            app.files.go_to(app, &rel);
+        },
+    ),
+    entry(
+        "files-go-recent",
+        "Recent notes",
+        F,
+        &["gr"],
+        &[],
+        |app, _| {
+            finder::open(app, finder::Switcher, "");
+        },
     ),
     entry(
         "files-keys",
@@ -394,13 +700,11 @@ pub static ENTRIES: &[Entry] = &[
     ),
 ];
 
-#[cfg(debug_assertions)]
 pub fn find(name: &str) -> Option<&'static Entry> {
     ENTRIES.iter().find(|e| e.name == name)
 }
 
 /// Run an entry by name (palette, debug D-Bus action).
-#[cfg(debug_assertions)]
 pub fn run(app: &Rc<App>, name: &str, arg: &str) -> bool {
     match find(name) {
         Some(e) => {

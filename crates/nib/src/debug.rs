@@ -233,10 +233,11 @@ pub fn dump(app: &Rc<App>) -> String {
             "{{\"tabs\":{},\"cursor\":{{\"line\":{},\"column\":{}}},",
             "\"files\":{{\"folder\":{},\"cursor\":{},\"rows\":{},\"selection\":{}}},",
             "\"status\":{{\"mode\":{},\"pending\":{},\"path\":{},\"words\":{},\"position\":{},\"right\":{}}},",
-            "\"focus\":{},\"focus_widget\":{},\"panels\":{{\"files\":{},\"right\":{}}},\"index_ready\":{},\"title\":{},",
+            "\"focus\":{},\"focus_widget\":{},\"panels\":{{\"files\":{},\"right\":{},\"parent\":{}}},\"index_ready\":{},\"title\":{},",
             "\"vault_key\":{},\"keys_shown\":{},\"registry_size\":{},",
             "\"completion\":{{\"visible\":{},\"rows\":{}}},",
-            "\"panel\":{{\"page\":{},\"rows\":{},\"section\":{}}},\"dialog\":{}}}\n"
+            "\"panel\":{{\"page\":{},\"rows\":{},\"section\":{}}},\"dialog\":{},",
+            "\"finder\":{{\"visible\":{},\"source\":{},\"query\":{},\"rows\":{}}}}}\n"
         ),
         list(tab_json),
         cursor.line() + 1,
@@ -259,6 +260,7 @@ pub fn dump(app: &Rc<App>) -> String {
         ),
         app.files.root.is_visible(),
         app.panel.root.is_visible(),
+        app.files.parent_visible(),
         app.index_ready.get(),
         json(&app.window.title().unwrap_or_default()),
         json(&app.key),
@@ -275,6 +277,10 @@ pub fn dump(app: &Rc<App>) -> String {
             .borrow()
             .as_deref()
             .map_or_else(|| "null".into(), json),
+        app.finder.visible(),
+        app.finder.source_name().map_or_else(|| "null".into(), json),
+        json(&app.finder.query_text()),
+        list(app.finder.rows().iter().take(30).map(|r| json(r))),
     )
 }
 

@@ -1,6 +1,6 @@
 //! Application lifetime: one window per vault, its start-up path and the
 //! vault event stream.
-use crate::{debug, editor, files, gtk, panel, registry, status, tabs, theme};
+use crate::{debug, editor, fileops, files, finder, gtk, panel, registry, status, tabs, theme};
 use gtk::prelude::*;
 use nib_core::{Index, NoteId, settings::Config};
 use nib_vault::{
@@ -219,6 +219,9 @@ impl Launcher {
     }
 }
 
+/// The switcher's candidates with the index generation and recent list they were built from.
+type SwitcherCache = (u64, Vec<NoteId>, Vec<nib_core::fuzzy::Candidate>);
+
 /// One open vault and its window. Components hold `Weak<App>` in their
 /// signal handlers and upgrade on use.
 pub struct App {
@@ -236,6 +239,12 @@ pub struct App {
     pub outer: gtk::Paned,
     pub inner: gtk::Paned,
     pub panel: panel::Panel,
+    pub finder: finder::Finder,
+    /// Running file operations and what to do when each finishes.
+    pub ops: RefCell<std::collections::HashMap<nib_vault::OpId, fileops::Pending>>,
+    /// Bumped by every index change; the switcher's candidates follow it.
+    pub index_generation: Cell<u64>,
+    switcher: RefCell<Option<SwitcherCache>>,
     pub completion: editor::completion::Completion,
     /// The question of an open dialog, for `--test-dump`.
     pub dialog: RefCell<Option<String>>,
@@ -284,7 +293,7 @@ impl App {
         let inner = gtk::Paned::new(gtk::Orientation::Horizontal);
         let app = Rc::new_cyclic(|this: &Weak<App>| App {
             window: window.clone(),
-            files: files::Files::new(this, &root, &session),
+            files: files::Files::new(this, &root, &session, &config),
             tabs: tabs::Tabs::new(this),
             status: status::Status::new(),
             vault,
@@ -297,6 +306,10 @@ impl App {
             outer,
             inner,
             panel: panel::Panel::new(this),
+            finder: finder::Finder::new(this),
+            ops: RefCell::new(std::collections::HashMap::new()),
+            index_generation: Cell::new(0),
+            switcher: RefCell::new(None),
             completion: editor::completion::Completion::new(),
             dialog: RefCell::new(None),
             discard_on_close: Cell::new(false),
@@ -358,7 +371,10 @@ impl App {
         self.outer.set_vexpand(true);
         column.append(&self.outer);
         column.append(&self.status.root);
-        self.window.set_child(Some(&column));
+        let overlay = gtk::Overlay::new();
+        overlay.set_child(Some(&column));
+        overlay.add_overlay(&self.finder.root);
+        self.window.set_child(Some(&overlay));
         let session = self.session.borrow();
         self.files.root.set_visible(session.files_visible);
         self.panel.root.set_visible(session.right_visible);
@@ -431,7 +447,9 @@ impl App {
             VaultEvent::NoteInvalid { path } => self.tabs.external_invalid(self, &path),
             VaultEvent::NoteRemoved { path } => self.tabs.mark_removed(self, &path),
             VaultEvent::NoteRenamed { from, to } => self.tabs.follow_rename(self, &from, &to),
-            VaultEvent::Search(_) | VaultEvent::Walk(_) | VaultEvent::Op(_) => {}
+            VaultEvent::Search(e) => self.finder.on_search(self, e),
+            VaultEvent::Walk(e) => self.finder.on_walk(self, e),
+            VaultEvent::Op(e) => fileops::on_event(self, e),
             VaultEvent::Notice(n) => self.status.notice(&n.message),
         }
     }
@@ -457,6 +475,7 @@ impl App {
             IndexEvent::AttachmentUpsert(path) => self.index.borrow_mut().upsert_attachment(&path),
             IndexEvent::AttachmentRemove(path) => self.index.borrow_mut().remove_attachment(&path),
         }
+        self.index_generation.set(self.index_generation.get() + 1);
         self.panel.queue(self);
         if self.index_ready.get() {
             let count = self.index.borrow().notes.len();
@@ -539,6 +558,23 @@ impl App {
             .set_path(&tab.display_path(self), tab.buffer.is_modified());
     }
 
+    /// The quick switcher's candidates, rebuilt only when the index or the
+    /// recent list changed since the last build (typing never re-reads disk).
+    pub fn switcher_candidates(&self) -> Vec<nib_core::fuzzy::Candidate> {
+        let generation = self.index_generation.get();
+        let recent = self.session.borrow().recent.clone();
+        let mut cache = self.switcher.borrow_mut();
+        if let Some((g, r, c)) = cache.as_ref()
+            && *g == generation
+            && *r == recent
+        {
+            return c.clone();
+        }
+        let candidates = nib_core::fuzzy::switcher_candidates(&self.index.borrow(), &recent);
+        *cache = Some((generation, recent, candidates.clone()));
+        candidates
+    }
+
     /// Move a note to the front of the recent list (switcher order, `gr`).
     pub fn remember_recent(&self, id: &NoteId) {
         let mut session = self.session.borrow_mut();
@@ -572,6 +608,28 @@ impl App {
             editor::save_if_modified(self, &tab);
         }
     }
+}
+
+/// A single click activates the row it lands on, without the hover
+/// selection `set_single_click_activate` brings (rows would follow the pointer).
+pub fn click_activates(list: &gtk::ListView) {
+    let click = gtk::GestureClick::new();
+    click.set_button(1);
+    click.connect_released(|gesture, n, _, _| {
+        let Some(list) = gesture.widget().and_downcast::<gtk::ListView>() else {
+            return;
+        };
+        let selected = list
+            .model()
+            .and_downcast::<gtk::SingleSelection>()
+            .map(|s| s.selected());
+        if n == 1
+            && let Some(pos) = selected.filter(|p| *p != gtk::INVALID_LIST_POSITION)
+        {
+            list.emit_by_name::<()>("activate", &[&pos]);
+        }
+    });
+    list.add_controller(click);
 }
 
 /// Pixels from a computed length (rounded; lengths here are far inside `i32`).
