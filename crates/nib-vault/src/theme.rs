@@ -148,13 +148,15 @@ mod tests {
     fn imports() {
         let d = tempfile::tempdir().unwrap();
         let theme = d.path().join("Test/gtk-3.0");
-        std::fs::create_dir_all(&theme).unwrap();
-        std::fs::write(
-            theme.join("gtk.css"),
-            "@import url(\"colors.css\");\n@define-color theme_bg_color #123456;",
+        let guard = crate::Guard::confined(vec![d.path().into()]);
+        crate::fsx::create_dir_all(&guard, &theme).unwrap();
+        crate::fsx::save(
+            &guard,
+            &theme.join("gtk.css"),
+            b"@import url(\"colors.css\");\n@define-color theme_bg_color #123456;",
         )
         .unwrap();
-        std::fs::write(theme.join("colors.css"),"@import 'gtk.css';\n@define-color theme_fg_color #ffffff;\n@define-color theme_selected_bg_color #abcdef;").unwrap();
+        crate::fsx::save(&guard,&theme.join("colors.css"),b"@import 'gtk.css';\n@define-color theme_fg_color #ffffff;\n@define-color theme_selected_bg_color #abcdef;").unwrap();
         let t = discover("Test", &[d.path().into()]).unwrap();
         assert_eq!(t.palette.is_dark(), Some(true));
         assert_eq!(

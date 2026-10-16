@@ -266,6 +266,9 @@ impl VaultHandle {
     /// Read one contained note synchronously for the first editable buffer.
     pub fn read_note(&self, abs: &Path) -> Result<NoteText, VaultError> {
         let path = self.inner.path(abs)?;
+        if !std::fs::metadata(&path)?.is_file() {
+            return Err(VaultError::Denied(path));
+        }
         if let Err(e) = fsx::recover_temp_for(&self.inner.guard, &path) {
             self.inner.notice(e.to_string());
         }
@@ -289,6 +292,9 @@ impl VaultHandle {
     /// Atomically save an editable UTF-8 note and emit an index patch.
     pub fn save(&self, abs: &Path, text: &str, fmt: &TextFormat) -> Result<Generation, VaultError> {
         let path = self.inner.path(abs)?;
+        if std::fs::metadata(&path).is_ok_and(|m| !m.is_file()) {
+            return Err(VaultError::Denied(path));
+        }
         if let Ok(existing) = std::fs::read(&path) {
             text::decode(&existing)?;
         }

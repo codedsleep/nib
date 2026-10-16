@@ -133,3 +133,32 @@ fn opening_a_nested_note_recovers_its_stale_temp() {
     assert_eq!(h.read_note(&path).unwrap().text, "old");
     assert!(!tmp.exists());
 }
+#[test]
+fn a_directory_is_never_opened_or_saved_as_a_note() {
+    let d = tempfile::tempdir().unwrap();
+    let root = d.path().join("vault");
+    fs::create_dir(&root).unwrap();
+    let sibling = d.path().join(".vault.nib-tmp");
+    fs::write(&sibling, "not this vault's temporary").unwrap();
+    fs::File::options()
+        .write(true)
+        .open(&sibling)
+        .unwrap()
+        .set_modified(SystemTime::now() - Duration::from_secs(120))
+        .unwrap();
+    let (h, _) = nib_vault::VaultHandle::open_deferred(
+        &root,
+        &nib_core::settings::Config::default(),
+        Guard::confined(vec![d.path().into()]),
+    )
+    .unwrap();
+    assert!(h.read_note(&root).is_err());
+    assert!(
+        h.save(&root, "bad", &nib_core::text::TextFormat::default())
+            .is_err()
+    );
+    assert_eq!(
+        fs::read_to_string(sibling).unwrap(),
+        "not this vault's temporary"
+    );
+}
