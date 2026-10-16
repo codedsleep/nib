@@ -497,6 +497,10 @@ fn render_depth<'a>(
                     }
                     Tag::List(n) => lists.push(n),
                     Tag::Item => {
+                        // A nested item starts its own line after its parent's text.
+                        if !out.is_empty() {
+                            newline(&mut out, lines.clone());
+                        }
                         let level = lists.len().saturating_sub(1);
                         tags.insert(INDENTS[level.min(INDENTS.len() - 1)]);
                         let number = lists.last_mut().and_then(Option::as_mut).map(|n| {

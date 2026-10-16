@@ -5,8 +5,10 @@ TEXT ["quote"] "Quote"
 NEWLINE
 TEXT ["indent-0"] "• "
 TEXT ["indent-0"] "first"
+NEWLINE
 TEXT ["indent-0", "indent-1"] "◦ "
 TEXT ["indent-0", "indent-1"] "second"
+NEWLINE
 TEXT ["indent-0", "indent-1", "indent-2"] "▪ "
 TEXT ["indent-0", "indent-1", "indent-2"] "third"
 NEWLINE
