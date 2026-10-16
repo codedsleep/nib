@@ -50,6 +50,6 @@ check "unresolved link created its note" test -f "$VAULT/Brand new note.md"
 check "and opened it" test "$(q '.tabs[] | select(.active) | .path')" = "Brand new note.md"
 # Ctrl+click on the link on the second line of linker00.md.
 open_note linker00.md
-vin mods ctrl move 300 77 click mods none
+vin mods ctrl move 300 102 click mods none
 settle 0.5
 check "Ctrl+click followed the link" test "$(q '.tabs[] | select(.active) | .path')" = hub.md

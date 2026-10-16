@@ -21,7 +21,7 @@ check "tasks are glyphs" has "$text" '☐ task' && has "$text" '☑ done'
 check "a callout keeps its title" has "$text" 'note Remember'
 check "markup is gone" bash -c "! grep -q '\*\*bold\*\*' <<<'$text'"
 shot reading-note
-vin move 280 65 click
+vin move 280 88 click
 settle 0.4
 check "clicking the frontmatter line shows the raw block" has "$(q .reading.text)" 'opaque: keep me unchanged'
 vin key G

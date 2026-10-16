@@ -84,7 +84,7 @@ if [[ ${1:-} != --inside ]]; then
     export XDG_DATA_HOME="$agent_home/data" XDG_STATE_HOME="$agent_home/state"
     export NIB_ALLOW_ROOTS="$agent_home${NIB_ALLOW_ROOTS:+:$NIB_ALLOW_ROOTS}"
     export WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 GTK_A11Y=none NO_AT_BRIDGE=1
-    export AGENT_SIZE=$size AGENT_BUILD=$build OUT=$out VAULT=$vault ROOT=$root
+    export AGENT_SIZE=$size AGENT_BUILD=$build OUT=$out VAULT=$vault ROOT=$root AGENT_HOME=$agent_home
     export AGENT_DRIVER=$driver AGENT_APP_ENV="${app_env[*]}"
     export NIB_VINPUT="$root/target/agent/vinput"
     exec timeout --kill-after=5 "$limit" dbus-run-session -- \

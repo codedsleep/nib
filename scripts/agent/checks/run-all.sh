@@ -49,6 +49,15 @@ one() {
             session "$name" "$out-de" \
                 --env LANG=en_GB.UTF-8 --env LANGUAGE=de -- "$vault"
             ;;
+        session)
+            session "$name" "$out-1" -- "$vault" || return 1
+            SECOND=1 session "$name" "$out-2" --keep --no-copy -- "$vault"
+            ;;
+        autosave)
+            session "$name" "$out-on" -- "$vault" || return 1
+            AUTOSAVE_OFF=1 session "$name" "$out-off" --config '[editor]\nautosave = false\n' -- "$vault"
+            ;;
+        vimoff) session "$name" "$out" --config '[editor]\nvim = false\n' -- "$vault" ;;
         complete)
             session "$name" "$out" -- "$vault" || return 1
             NOT_READY=1 session "$name" "$out-not-ready" --env NIB_TEST_INDEX_DELAY_MS=20000 -- "$vault"
