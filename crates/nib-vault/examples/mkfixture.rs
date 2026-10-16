@@ -76,7 +76,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ("hub.md", b"# Hub\n## Heading\nHub paragraph. ^block\n"),
         ("ambiguous.md", b"# Root ambiguous\n"),
         ("folder00/ambiguous.md", b"# Folder ambiguous\n"),
-        ("embeds.md", b"![[hub]]\n![[hub#Heading]]\n![[embeds]]\n"),
+        (
+            "embeds.md",
+            b"![[folder00/note00000]]\n![[folder00/note00000#Detail]]\n![[embeds]]\n",
+        ),
     ] {
         put(&g, &root, n, b)?;
     }
@@ -103,7 +106,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     for i in 0..10000 {
         let _ = writeln!(
             big,
-            "Line {i}: **Markdown** and [[hub]] with #large and `code`."
+            "Line {i}: **Markdown** and [[ambiguous]] with #large and `code`."
         );
     }
     put(&g, &root, "big.md", big.as_bytes())?;
