@@ -13,5 +13,13 @@ scripts/dev-run.sh               # confined development entry point
 cargo run -p nib -- --help
 ```
 
+Goal A provides the pure Markdown/editor algorithms and vault services: guarded
+atomic saves, cached listing, parallel indexing, watched changes, streamed search
+and matching, file operations and theme discovery. To measure a generated fixture:
+
+```sh
+NIB_ALLOW_ROOTS= cargo run --release -p nib-vault --example trace -- ~/.cache/nib-fixture
+```
+
 Before Phase 5 the binary supports `--help` and `--version`; other invocations
 exit with status 2. Development and tests never use the live notes vault.

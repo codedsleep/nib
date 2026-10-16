@@ -26,3 +26,14 @@ pub enum VaultError {
 }
 /// Monotonically increasing successful-write token.
 pub type Generation = u64;
+pub mod events;
+pub mod fuzzy;
+mod indexer;
+mod listing;
+pub mod ops;
+pub mod search;
+mod service;
+pub mod theme;
+mod watch;
+pub use events::*;
+pub use service::{NoteText, VaultHandle};

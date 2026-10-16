@@ -148,3 +148,39 @@ pub fn symlink(guard: &Guard, target: &Path, link: &Path) -> Result<(), VaultErr
     std::os::unix::fs::symlink(target, link)?;
     Ok(())
 }
+/// Trash through GIO, refusing if the XDG trash location is outside confinement.
+/// Failure never falls back to removing vault content.
+pub fn trash(guard: &Guard, path: &Path) -> Result<(), VaultError> {
+    use gio::prelude::*;
+    guard.check(path)?;
+    guard.check(&glib::user_data_dir().join("Trash"))?;
+    gio::File::for_path(path)
+        .trash(gio::Cancellable::NONE)
+        .map_err(|e| VaultError::Message(e.to_string()))
+}
+/// Copy a file atomically, or recursively create a new directory tree.
+/// Symbolic links remain links; every child passes the same confinement check.
+pub fn copy(guard: &Guard, source: &Path, dest: &Path) -> Result<(), VaultError> {
+    guard.check(dest)?;
+    let meta = fs::symlink_metadata(source)?;
+    if meta.file_type().is_symlink() {
+        let target = fs::read_link(source)?;
+        return symlink(guard, &target, dest);
+    }
+    if meta.is_dir() {
+        create_dir_all(guard, dest)?;
+        for e in fs::read_dir(source)? {
+            let e = e?;
+            copy(guard, &e.path(), &dest.join(e.file_name()))?;
+        }
+        set_permissions(guard, dest, meta.permissions())?;
+    } else if meta.is_file() {
+        create(guard, dest, &fs::read(source)?)?;
+        set_permissions(guard, dest, meta.permissions())?;
+    } else {
+        return Err(VaultError::Message(
+            "only regular files, directories and symlinks can be copied".into(),
+        ));
+    }
+    Ok(())
+}
