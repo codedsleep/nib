@@ -16,6 +16,7 @@ mod finder;
 mod help;
 mod launch;
 mod panel;
+mod reading;
 mod registry;
 mod status;
 mod tabs;

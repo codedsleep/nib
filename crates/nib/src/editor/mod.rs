@@ -4,7 +4,7 @@ pub mod behaviours;
 pub mod completion;
 pub mod vim;
 
-use crate::{app::App, debug, gtk, theme};
+use crate::{app::App, debug, gtk, reading, theme};
 use nib_core::text::TextFormat;
 use nib_vault::NoteText;
 use sourceview5::prelude::*;
@@ -98,6 +98,15 @@ pub struct Tab {
     pub vim: RefCell<Option<vim::Vim>>,
     /// nib's own key controller (behaviours, editor chords, completion keys).
     pub keys: gtk::EventControllerKey,
+    /// Holds the source scroller, the reading view, or both in a split.
+    pub content: gtk::Box,
+    pub mode: Cell<reading::Mode>,
+    /// The reading view, built on first use.
+    pub reading: RefCell<Option<Rc<reading::Reading>>>,
+    /// An image file shown in a reading tab (never saved).
+    pub image: Cell<bool>,
+    /// Counts buffer changes, so the reading view knows when it is stale.
+    pub edits: Cell<u64>,
     /// The rest of a long note still to be inserted after the first frame.
     pending: RefCell<Option<String>>,
     /// Words of the last idle count, shown when the tab becomes current.
@@ -156,6 +165,11 @@ impl Tab {
             banner,
             words: RefCell::new(None),
             vim: RefCell::new(None),
+            content,
+            mode: Cell::new(reading::Mode::Source),
+            reading: RefCell::new(None),
+            image: Cell::new(false),
+            edits: Cell::new(0),
             pending: RefCell::new(None),
             word_count: Cell::new(None),
             app: app.this.clone(),
@@ -180,7 +194,27 @@ impl Tab {
             }
         });
         *self.words.borrow_mut() = Some(words.clone());
-        self.buffer.connect_changed(move |_| words.poke());
+        let tab_split = weak_tab.clone();
+        self.buffer.connect_changed(move |_| {
+            words.poke();
+            if let Some(tab) = tab_split.upgrade() {
+                tab.edits.set(tab.edits.get() + 1);
+            }
+            // Split view: re-render 400 ms after the last edit (a timestamp now).
+            if let Some(tab) = tab_split.upgrade()
+                && tab.mode.get() == reading::Mode::Split
+                && let Some(r) = tab.reading.borrow().as_ref()
+                && let Some(d) = r.rerender.borrow().as_ref()
+            {
+                d.poke();
+            }
+        });
+        let tab_scroll = weak_tab.clone();
+        self.scroller.vadjustment().connect_value_changed(move |_| {
+            if let Some(tab) = tab_scroll.upgrade() {
+                reading::follow_scroll(&tab);
+            }
+        });
         let weak2 = weak.clone();
         let tab2 = weak_tab.clone();
         self.buffer.connect_modified_changed(move |_| {

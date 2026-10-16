@@ -14,6 +14,12 @@ const NO_THEME: &str = "Empty";
 
 thread_local! {
     static EDITOR_CSS: gtk::CssProvider = gtk::CssProvider::new();
+    static READING_CSS: gtk::CssProvider = gtk::CssProvider::new();
+}
+
+/// The reading view's background and text colour, from the scheme's `text`.
+pub fn set_reading_css(css: &str) {
+    READING_CSS.with(|p| p.load_from_string(css));
 }
 
 /// Once per process, before the first window.
@@ -31,17 +37,25 @@ pub fn install() {
         &own,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
-    EDITOR_CSS.with(|p| {
+    for provider in [
+        EDITOR_CSS.with(Clone::clone),
+        READING_CSS.with(Clone::clone),
+    ] {
         gtk::style_context_add_provider_for_display(
             &display,
-            p,
+            &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 1,
         );
-    });
+    }
     let manager = sourceview5::StyleSchemeManager::default();
     for dir in scheme_dirs() {
         manager.append_search_path(&dir.to_string_lossy());
     }
+}
+
+/// Apply `editor.style_scheme` to the reading view's tags and colours.
+pub fn restyle_reading(config: &nib_core::settings::Config) {
+    crate::reading::restyle(scheme(&config.editor.style_scheme).as_ref());
 }
 
 /// Dark is the standard look; a theme without a dark variant is used as it is.

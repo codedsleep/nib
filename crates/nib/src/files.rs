@@ -721,7 +721,9 @@ impl Files {
     fn open_entry(&self, app: &Rc<App>, entry: &Entry, new_tab: bool) {
         if entry.directory {
             self.show(app, &entry.path);
-        } else if entry.name.to_ascii_lowercase().ends_with(".md") {
+        } else if entry.name.to_ascii_lowercase().ends_with(".md")
+            || crate::reading::is_image(&entry.path)
+        {
             app.open_note(&entry.path, new_tab, None);
         } else {
             crate::launch::open_attachment(app, &entry.path);

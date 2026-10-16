@@ -98,7 +98,7 @@ pub static ENTRIES: &[Entry] = &[
         "Open a note by name",
         C,
         &[],
-        &["e", "edit"],
+        &["e"],
         commands::edit,
     ),
     entry(
@@ -215,6 +215,41 @@ pub static ENTRIES: &[Entry] = &[
         },
     ),
     // ---- window ----
+    entry(
+        "read",
+        "Reading view (toggle)",
+        W,
+        &["<Alt>e"],
+        &["read"],
+        |app, _| {
+            crate::reading::toggle(app);
+        },
+    ),
+    entry(
+        "edit-source",
+        "Back to the source (:edit NOTE opens one)",
+        C,
+        &[],
+        &["edit"],
+        |app, arg| {
+            if arg.is_empty() {
+                let tab = app.tabs.current();
+                crate::reading::set_mode(app, &tab, crate::reading::Mode::Source);
+            } else {
+                commands::edit(app, arg);
+            }
+        },
+    ),
+    entry(
+        "split",
+        "Source and reading side by side",
+        W,
+        &["<Alt><Shift>e"],
+        &["split"],
+        |app, _| {
+            crate::reading::toggle_split(app);
+        },
+    ),
     entry(
         "toggle-files",
         "Show or hide the files column",

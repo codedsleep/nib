@@ -217,6 +217,10 @@ pub fn open_attachment(app: &Rc<App>, path: &Path) {
     let name = path
         .file_name()
         .map_or_else(String::new, |n| n.to_string_lossy().into_owned());
+    if crate::reading::is_image(path) {
+        app.open_note(path, false, None);
+        return;
+    }
     let path = match app.vault.checked_path(path) {
         Ok(p) => p,
         Err(e) => {

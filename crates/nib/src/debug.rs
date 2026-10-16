@@ -226,6 +226,21 @@ pub fn dump(app: &Rc<App>) -> String {
     });
     let tab = app.tabs.current();
     let cursor = tab.buffer.iter_at_mark(&tab.buffer.get_insert());
+    let colours = crate::reading::colours(&tab);
+    let reading = tab
+        .reading
+        .borrow()
+        .as_ref()
+        .map_or((0, 0, String::new(), 0), |r| {
+            let (shown, waiting) = r.images();
+            let text: String = r.text().chars().take(40_000).collect();
+            (
+                shown,
+                waiting,
+                text,
+                crate::app::px(r.scroller.vadjustment().value()),
+            )
+        });
     let status = app.status.texts();
     let files_folder = app.relative(&app.files.folder());
     format!(
@@ -237,7 +252,8 @@ pub fn dump(app: &Rc<App>) -> String {
             "\"vault_key\":{},\"keys_shown\":{},\"registry_size\":{},",
             "\"completion\":{{\"visible\":{},\"rows\":{}}},",
             "\"panel\":{{\"page\":{},\"rows\":{},\"section\":{}}},\"dialog\":{},",
-            "\"finder\":{{\"visible\":{},\"source\":{},\"query\":{},\"rows\":{}}}}}\n"
+            "\"finder\":{{\"visible\":{},\"source\":{},\"query\":{},\"rows\":{}}},",
+            "\"reading\":{{\"mode\":{},\"images\":{},\"waiting\":{},\"scroll\":{},\"heading\":{},\"scheme\":{},\"text\":{}}}}}\n"
         ),
         list(tab_json),
         cursor.line() + 1,
@@ -281,6 +297,13 @@ pub fn dump(app: &Rc<App>) -> String {
         app.finder.source_name().map_or_else(|| "null".into(), json),
         json(&app.finder.query_text()),
         list(app.finder.rows().iter().take(30).map(|r| json(r))),
+        json(&format!("{:?}", tab.mode.get()).to_lowercase()),
+        reading.0,
+        reading.1,
+        reading.3,
+        json(&colours.0),
+        json(&colours.1),
+        json(&reading.2),
     )
 }
 

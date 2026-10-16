@@ -267,6 +267,7 @@ impl App {
         note: Option<PathBuf>,
     ) -> anyhow::Result<Rc<Self>> {
         crate::theme::apply_fonts(&config);
+        crate::theme::restyle_reading(&config);
         let guard = Guard::from_env();
         let (vault, events) = VaultHandle::open_deferred(root, &config, guard.clone())?;
         let key = state::vault_key(vault.root())?;
@@ -508,12 +509,22 @@ impl App {
     /// Open a note path in the current (or a new) tab, at an optional line.
     pub fn open_note(self: &Rc<Self>, path: &Path, new_tab: bool, line: Option<u32>) {
         let _ = new_tab;
+        if crate::reading::is_image(path) {
+            self.open_image(path);
+            return;
+        }
         match self.vault.read_note(path) {
             Ok(text) => {
                 let tab = self.tabs.current();
                 editor::save_if_modified(self, &tab);
                 self.completion.close();
+                let was_image = tab.image.replace(false);
                 tab.load(self, path, text, line.unwrap_or(1));
+                if was_image {
+                    crate::reading::set_mode(self, &tab, crate::reading::Mode::Source);
+                } else if tab.mode.get() != crate::reading::Mode::Source {
+                    crate::reading::render(self, &tab);
+                }
                 self.update_title();
                 self.panel.queue(self);
                 tab.view.grab_focus();
@@ -522,6 +533,25 @@ impl App {
                 .status
                 .error(&format!("cannot open {}: {e}", self.relative(path))),
         }
+    }
+
+    /// An image file in a reading tab.
+    pub fn open_image(self: &Rc<Self>, path: &Path) {
+        let tab = self.tabs.current();
+        editor::save_if_modified(self, &tab);
+        self.completion.close();
+        *tab.path.borrow_mut() = Some(path.to_owned());
+        tab.read_only.set(true);
+        tab.image.set(true);
+        tab.buffer.set_text("");
+        tab.buffer.set_modified(false);
+        tab.view.set_editable(false);
+        if tab.mode.get() == crate::reading::Mode::Reading {
+            crate::reading::render(self, &tab);
+        } else {
+            crate::reading::set_mode(self, &tab, crate::reading::Mode::Reading);
+        }
+        self.update_title();
     }
 
     /// Vault-relative display path.
