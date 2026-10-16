@@ -4,6 +4,9 @@ A minimal, keyboard-first Markdown notes app for Linux, Rust, GTK 4 and
 GtkSourceView 5. Opens an Obsidian vault unchanged. Development follows
 [the scope](.planning/SCOPE.md); the GTK window arrives in Goal B.
 
+Goal A is complete through Phase 4. See [HANDOFF-A.md](HANDOFF-A.md) for the
+backend API, event wiring, measured budgets and remaining frontend work.
+
 Requires Rust 1.92+, GTK 4.14+ and GtkSourceView 5.10+.
 
 ```sh

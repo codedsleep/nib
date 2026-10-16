@@ -79,69 +79,78 @@ These are PROMPT §5 and §23 with the clarifications below. The diagram is DISC
 
 ## 5. Interface contract (Goal A builds it, Goal B consumes it)
 
-Names are binding; signatures are a guide. Goal A refines them and records changes in HANDOFF-A.
+Names are binding; the original guide has been reconciled below with Goal A. Struct fields and complete signatures are documented by `cargo doc`; HANDOFF-A records refinements and consumption examples.
 
 ```rust
-// ---- nib-core ---------------------------------------------------------
-pub struct NoteId(Arc<str>);                 // vault-relative, '/', no ".md"
-pub struct TextFormat { pub eol: Eol, pub bom: bool, pub trailing_newline: bool } // Eol::{Lf, Crlf, Cr, Mixed}
-pub fn text::decode(bytes: &[u8]) -> Result<(String, TextFormat), TextError>;     // NotUtf8 → Err
-pub fn text::encode(text: &str, fmt: &TextFormat) -> Vec<u8>;
+// ---- nib-core: public values are documented in cargo doc ----------------
+NoteId::new(&str) -> Result<NoteId, IdError>; // relative, '/', no Markdown suffix
+text::decode(&[u8]) -> Result<(String, TextFormat), TextError>;
+text::encode(&str, &TextFormat) -> Vec<u8>;
+text::fingerprint(&str) -> u64; // in-process stale-plan detector
+parse_note(NoteId, &str, SystemTime, u64) -> NoteMeta;
+// NoteMeta has text_hash; Link has raw, written, byte_range and full span.
+// Edit { note, byte_range, replacement, expected, source_hash }.
+Index::build(Vec<NoteMeta>) -> Index;
+Index::build_with_attachments(Vec<NoteMeta>, Vec<String>) -> Index;
+Index::{upsert, remove, rename, upsert_attachment, remove_attachment};
+Index::backlinks(&NoteId) -> &[(NoteId, u32)]; // display order is unspecified
+// by_stem/by_alias/tag/unresolved memberships are BTreeSets; no body cache.
+resolve(&Index, &NoteId, &str) -> LinkTarget; // wikilink rules
+links::resolve_markdown(&Index, &NoteId, &str) -> LinkTarget;
+shortest_link(&Index, &NoteId, LinkFormat) -> String; // root context for relative
+links::link_from(&Index, &NoteId, &NoteId, LinkFormat) -> String;
+link_text(&str, Option<&str>, Option<&str>, Option<&str>, bool) -> String;
+rename_plan(&Index, &NoteId, &NoteId) -> Vec<Edit>; // remaps moved source IDs
+render::{render, render_section}; // -> Vec<Op>, source ranges, Styles, Arc targets
+render::RenderCtx::{resolve, resolve_markdown, resolve_in, embed};
+edit::{continue_list, toggle_task, cycle_heading, auto_pair, link_at,
+       completion_trigger, detect_indent, indent_list, word_count, outline};
+fuzzy::{Query::parse, switcher_candidates, tag_candidates, completion_candidates};
+launch::{classify, url_allowed, within_vault}; // containment needs canonical inputs
+clip::{encode_uri_list, decode_uri_list, encode_gnome_copied, decode_gnome_copied};
+palette::{parse_gtk3_colors, recolour};
+search::SearchSpec::parse(&str) -> SearchSpec;
+settings::Config::parse(&str) -> (Config, Vec<Warning>);
+settings::DEFAULT_TOML;
+cli::parse(impl IntoIterator<Item=String>) -> Result<Invocation, UsageError>;
+template::expand; daily::{path, offset}; attach::{pasted_image_name, collision_name};
+sort::{Entry, sort_entries, visible, never_shown, age_label};
 
-pub fn parse_note(id: NoteId, text: &str, mtime: SystemTime, size: u64) -> NoteMeta;
-impl Index { pub fn build(metas: Vec<NoteMeta>) -> Self;
-             pub fn upsert(&mut self, meta: NoteMeta); pub fn remove(&mut self, id: &NoteId);
-             pub fn rename(&mut self, old: &NoteId, new: NoteId);
-             pub fn backlinks(&self, id: &NoteId) -> &[(NoteId, u32)]; /* … */ }
-pub fn resolve(index: &Index, from: &NoteId, raw: &str) -> LinkTarget;
-pub fn shortest_link(index: &Index, target: &NoteId, fmt: LinkFormat) -> String;
-pub fn rename_plan(index: &Index, old: &NoteId, new: &NoteId) -> Vec<Edit>;     // Edit { note, byte_range, replacement }
-pub fn render::render(md: &str, ctx: &dyn RenderCtx) -> Vec<Op>;                // Op carries source line ranges
-pub fn render::render_section(md: &str, heading_slug: &str, ctx: &dyn RenderCtx) -> Vec<Op>;
-pub mod edit { continue_list, toggle_task, cycle_heading, auto_pair, link_at, completion_trigger,
-               detect_indent, word_count, outline }                              // &str + offsets → Option<TextEdit>
-pub mod fuzzy { Query::parse, switcher_candidates, tag_candidates, completion_candidates }
-pub mod launch { classify(name, mode, content_type) -> Launch, url_allowed(&str) -> bool }
-pub mod clip  { encode_uri_list, decode_uri_list, encode_gnome_copied, decode_gnome_copied }
-pub mod palette { parse_gtk3_colors, recolour(gtk4_css, &Palette) -> String }
-pub mod search { SearchSpec::parse(&str) }                                       // smart-case, r:, -exclude
-pub mod settings { Config::parse(&str) -> (Config, Vec<Warning>), DEFAULT_TOML }
-pub mod cli { parse(args) -> Invocation }
-pub mod template { expand }, pub mod daily { path, offset }, pub mod attach { pasted_image_name }
-pub mod sort { sort_entries, never_shown, age_label }
-
-// ---- nib-vault --------------------------------------------------------
-pub struct VaultHandle;                      // Clone, Send; cheap
-impl VaultHandle {
-  pub fn open(root: &Path, cfg: &Config, guard: Guard) -> Result<(Self, Receiver<VaultEvent>), VaultError>;
-  pub fn read_note(&self, abs: &Path) -> Result<NoteText, VaultError>;   // sync; the start-up fast path
-  pub fn save(&self, abs: &Path, text: &str, fmt: &TextFormat) -> Result<Generation, VaultError>;
-  pub fn list(&self, folder: &Path);         // → VaultEvent::Listing (from LRU or disk)
-  pub fn reread(&self, folder: &Path);       // F5
-  pub fn start_index(&self);                 // → Index(Progress/Ready)
-  pub fn search(&self, spec: SearchSpec) -> SearchHandle;   // Drop or cancel() stops it; → Search(batch)
-  pub fn walk_below(&self, folder: &Path) -> WalkHandle;    // z finder → Walk(batch)
-  pub fn op(&self, op: FileOp) -> OpId;      // Copy/Move/Trash/Rename/CreateNote/CreateFolder/ApplyEdits
-  pub fn answer(&self, op: OpId, a: ConflictAnswer);
-  pub fn create_note(&self, id: &NoteId, initial: &str) -> Result<PathBuf, VaultError>; // never overwrites
-  pub fn write_attachment(&self, name: &str, bytes: &[u8]) -> Result<PathBuf, VaultError>;
-  pub fn copy_attachment(&self, src: &Path) -> OpId;
-  pub fn theme_css(name: &str) -> Option<String>;           // static; D15
-}
-pub enum VaultEvent {
-  Listing { folder: PathBuf, entries: Arc<[Entry]> },
-  Index(IndexEvent),            // Progress(n,total) | Ready(Index) | Upsert(NoteMeta) | Remove(NoteId) | Renamed(NoteId,NoteId)
-  NoteChanged { path: PathBuf, text: String, fmt: TextFormat },   // external edit, not ours
-  NoteRemoved { path: PathBuf }, NoteRenamed { from: PathBuf, to: PathBuf },
-  Search(SearchEvent), Walk(WalkEvent),
-  Op(OpEvent),                  // Progress | Conflict(name) | Done(summary) | Failed(err)
-  Notice(Notice),               // watch limit (ENOSPC) with the sysctl line, guard refusals, …
-}
-pub struct Guard;  impl Guard { pub fn from_env() -> Self; pub fn check(&self, p: &Path) -> Result<(), VaultError>; }
-pub mod state { paths(profile), vault_key, find_vault_root, load_config, Session::{load,save},
-                append_crash, cleanup_stale_tmp }
-pub mod log  { init() /* NIB_LOG, NIB_TRACE */, trace_span!(…) }
-pub mod fuzzy { Matcher /* nucleo, streams snapshots */ }
+// ---- nib-vault: all I/O and threads; no GTK/GDK --------------------------
+VaultHandle::open(&Path, &Config, Guard) -> Result<(VaultHandle, Receiver<VaultEvent>), VaultError>;
+VaultHandle::open_deferred(&Path, &Config, Guard) -> Result<(VaultHandle, Receiver<VaultEvent>), VaultError>;
+VaultHandle::start_watching(&self) -> Result<(), VaultError>; // idempotent
+VaultHandle::{root, checked_path, watcher_ready, needs_relist, listing_reads};
+VaultHandle::read_note(&self, &Path) -> Result<NoteText, VaultError>; // sync fast path
+VaultHandle::save(&self, &Path, &str, &TextFormat) -> Result<Generation, VaultError>;
+VaultHandle::{list, reread, start_index}; // background event results
+VaultHandle::search(&self, SearchSpec) -> SearchHandle; // keep until cancelled
+VaultHandle::walk_below(&self, &Path) -> WalkHandle;
+SearchHandle::{id, cancel, cancel_and_wait}; // only the last blocks; tools only
+VaultHandle::op(&self, FileOp) -> OpId;
+VaultHandle::answer(&self, OpId, ConflictAnswer);
+VaultHandle::create_note(&self, &NoteId, &str) -> Result<PathBuf, VaultError>;
+VaultHandle::ensure_daily(&self, NaiveDate) -> Result<PathBuf, VaultError>;
+VaultHandle::write_attachment(&self, &str, &[u8]) -> Result<PathBuf, VaultError>;
+VaultHandle::copy_attachment(&self, &Path) -> OpId;
+VaultHandle::theme_css(&str) -> Option<String>; // after GTK resource registration
+// FileOp: Copy, Move, Trash, Rename, CreateNote, CreateFolder, ApplyEdits, CopyAttachment.
+// OpSummary { files, links, edits }; no permanent-delete operation.
+// NoteText { text, fmt, read_only, notice }.
+VaultEvent::{Listing, Index, NoteChanged, NoteInvalid, NoteRemoved, NoteRenamed,
+             Search, Walk, Op, Notice};
+IndexEvent::{Progress, Ready(Box<Index>), Upsert(Box<NoteMeta>), Remove, Renamed,
+             AttachmentUpsert, AttachmentRemove};
+// Search/Walk events carry request IDs; discard queued obsolete events in the UI.
+Guard::{from_env, confined, unconfined, check};
+state::{paths, vault_key, find_vault_root, load_config, Session, TabState,
+        append_crash, cleanup_stale_tmp};
+log::init(); trace_span!("name");
+fuzzy::Matcher::new(impl IntoIterator<Item=Candidate>) -> Result<Matcher, VaultError>;
+fuzzy::Matcher::set_query(&self, &str) -> u64;
+fuzzy::Matcher::events(&self) -> Receiver<Snapshot>; // query ID, page, counts, running
+// Matcher owns its actor/pool; no polling or UI tick needed.
+theme::{discover, roots, theme_css, theme_css_with_base};
 ```
 
 ---
@@ -203,11 +212,11 @@ Legend: **Deps** = tasks that must be done first (inside a goal, phase order imp
 
 #### Phase 4 — Integration proof, performance numbers, hand-off
 
-- [ ] **4.1 Integration tests** (`crates/nib-vault/tests/`, tempdir copies of the fixture). Byte round trip for every edge file; `hub.md` rename plan applied (14 notes rewritten, re-index resolves); trash; guard refusals for every op; symlink save; conflict answers; a **no-pollution test** that diffs a full file listing before and after a scripted session of ops (only the expected paths change, nothing under dot-folders). **Accept:** green under `check.sh`.
-- [ ] **4.2 Crash-safety test** (§8 kill -9 item). A child process saves a 1 MB note in a loop and the parent `SIGKILL`s it at random points 200 times. Each time the note is exactly the old or the new bytes, and the next `open` removes any stale temp file older than the threshold (the test fakes the mtime). **Accept:** green, ≤ 20 s.
-- [ ] **4.3 Trace example.** `cargo run --release -p nib-vault --example trace -- DIR` prints `index_ready`, `parse_note_p50/p99`, `search_first_batch`, `render_ops_big`, `list_20k` and `matcher_first`. **Accept:** numbers recorded in §7 (ws column), all ≤ 60 % of budget.
-- [ ] **4.4 Docs.** Doc comments on every `pub` item, a `//!` per module, `cargo doc --no-deps -p nib-core -p nib-vault` with no warnings, and §5 updated in place to match what was built. **Accept:** the doc build is clean.
-- [ ] **4.5 `HANDOFF-A.md`.** What exists, how Goal B uses each service (with one short example per `VaultEvent`), contract changes, measured numbers, known gaps, and anything Goal B must decide. **Accept:** file committed; every Goal A box ticked; §10 entries for Phases 1–4; pushed.
+- [x] **4.1 Integration tests** (`crates/nib-vault/tests/`, tempdir copies of the fixture). Byte round trip for every edge file; `hub.md` rename plan applied (14 notes rewritten, re-index resolves); trash; guard refusals for every op; symlink save; conflict answers; a **no-pollution test** that diffs a full file listing before and after a scripted session of ops (only the expected paths change, nothing under dot-folders). **Accept:** green under `check.sh`.
+- [x] **4.2 Crash-safety test** (§8 kill -9 item). A child process saves a 1 MB note in a loop and the parent `SIGKILL`s it at random points 200 times. Each time the note is exactly the old or the new bytes, and the next `open` removes any stale temp file older than the threshold (the test fakes the mtime). **Accept:** green, ≤ 20 s.
+- [x] **4.3 Trace example.** `cargo run --release -p nib-vault --example trace -- DIR` prints `index_ready`, `parse_note_p50/p99`, `search_first_batch`, `render_ops_big`, `list_20k` and `matcher_first`. **Accept:** numbers recorded in §7 (ws column), all ≤ 60 % of budget.
+- [x] **4.4 Docs.** Doc comments on every `pub` item, a `//!` per module, `cargo doc --no-deps -p nib-core -p nib-vault` with no warnings, and §5 updated in place to match what was built. **Accept:** the doc build is clean.
+- [x] **4.5 `HANDOFF-A.md`.** What exists, how Goal B uses each service (with one short example per `VaultEvent`), contract changes, measured numbers, known gaps, and anything Goal B must decide. **Accept:** file committed; every Goal A box ticked; §10 entries for Phases 1–4; pushed.
 
 ---
 
@@ -294,13 +303,13 @@ Each row lists the thinkpad budget (P§21, D6), the workstation target (≤ 60 %
 
 | Metric | Thinkpad budget | ws target | Proven in | ws measured | thinkpad measured |
 |---|---|---|---|---|---|
-| `parse_note`, 5 KB note | ≤ 100 µs | ≤ 60 µs | 2.2 / 4.3 | 8.389 µs p50 (Phase 2) | |
-| `completion_trigger` key path | ≤ 50 µs | ≤ 30 µs | 2.8 / 6.5 | 0.623 µs p50 (Phase 2) | |
-| Render ops build, `big.md` | — | ≤ 12 ms | 2.7 / 4.3 | 11.218 ms (synthetic big, Phase 2) | |
-| Index ready, 3 000 notes | ≤ 400 ms | ≤ 240 ms | 3.4 / 4.3 | 45.559 ms (3,057 notes) | |
-| Index ready, 30 000 notes | ≤ 4 s | ≤ 2.4 s | 3.4 | 325.348 ms (30,057 notes) | |
-| Search, first page | ≤ 100 ms | ≤ 60 ms | 3.5 / 7.7 | 0.720 ms | |
-| Matcher first snapshot | ≤ 10 ms | ≤ 6 ms | 3.6 / 7.7 | 0.252 ms | |
+| `parse_note`, 5 KB note | ≤ 100 µs | ≤ 60 µs | 2.2 / 4.3 | 13.582 µs p50 / 19.246 µs p99 | |
+| `completion_trigger` key path | ≤ 50 µs | ≤ 30 µs | 2.8 / 6.5 | 0.615 µs | |
+| Render ops build, `big.md` | — | ≤ 12 ms | 2.7 / 4.3 | 7.367 ms | |
+| Index ready, 3 000 notes | ≤ 400 ms | ≤ 240 ms | 3.4 / 4.3 | 100.947 ms (3,058 notes; 40.2 MB fixture) | |
+| Index ready, 30 000 notes | ≤ 4 s | ≤ 2.4 s | 3.4 | 417.603 ms (30,058 notes) | |
+| Search, first page | ≤ 100 ms | ≤ 60 ms | 3.5 / 7.7 | 0.714 ms (first streamed batch) | |
+| Matcher first snapshot | ≤ 10 ms | ≤ 6 ms | 3.6 / 7.7 | 0.196 ms | |
 | Start → window mapped, note editable | ≤ 150 ms | ≤ 90 ms | 5.7 | | |
 | Open a 10 000-line note, first paint | ≤ 16 ms | ≤ 10 ms | 5.6 | | |
 | Switcher popover visible | ≤ 30 ms | ≤ 18 ms | 7.6 | | |
@@ -379,6 +388,21 @@ Commits: `59ef76f` (index/render performance), `a4c8aa2` (services), `74ce0f6` (
 - Real NordArc palette + the installed GTK base resource produced **157,007 bytes of CSS**. The resource was extracted with the system `gresource` tool for this display-free proof; the app calls `theme_css` after GTK registers its resources. `theme_css_with_base` supports display-free callers/tests.
 - GIO refuses trash on this system's `/tmp` tmpfs. Success/replace tests therefore use a temporary directory on the checkout filesystem and an isolated child-process XDG data home. Refusals leave the file intact; no permanent-delete fallback exists.
 - Contract refinements: boxed Ready/Upsert event payloads, a `NoteInvalid` event for external encoding changes, request IDs on streamed search/walk and matcher snapshots, `checked_path` for frontend image/launch containment, an explicit `ensure_daily`, and `OpSummary.edits` for buffer patching. Listings include ordinary hidden entries; core/UI filters preferences without a re-read. `cancel()` prevents future sends; the UI discards already queued events by request ID.
+
+### Phase 4 — 2026-10-16, Codex
+
+Commits: `f3ef5e5` (rewrite preconditions/index memberships), `0186beb` (borrowed rendering), `328f364` (external edits/startup), `c636280` (state), `2e3b2e1` (integration/crash proofs), `e90306a` and `b8092cc` (file-path/read refusals), `49bc6ed` (40 MB fixture), `91b8ecd` (embed source context), `39ebdba` (isolated trace), plus the phase completion commit.
+
+- **All Goal A boxes complete.** Final `scripts/check.sh` green: **54 tests** (32 core, 22 vault), plus the parent-invoked isolated trash child and 200 crash children. The two timing probes and two child entry points are deliberately ignored by the generic test runner; parents invoke the children, and the trace exercises timing. Format, pedantic clippy, dependency boundaries, warning-free docs, release build and version check pass. Final full check **26.171 s**, including a rebuild (under the 3-minute warm limit).
+- Full-fixture integration copies the generated vault into a tempdir, round-trips CRLF/BOM/mixed/no-final-newline/symlink files byte-exact, refuses non-UTF-8 saves, moves `hub.md`, applies fourteen edits across fourteen notes and re-indexes. A full before/after manifest (bytes, types, symlink targets, modes) contains exactly the expected changes, with nothing under protected folders and no temp pollution. Every mutation variant has a guard-refusal proof. Folder rename follows open paths and remaps edits even without a watcher.
+- Crash proof: a child repeatedly saves a 1 MB note, is SIGKILLed at 200 deterministic varied offsets, and every resulting note is exactly old or new. An explicit run took **2.526 s** and recovered **153** stale temps; all runs stayed below 20 s. Stale cleanup works on background startup and for a nested note's temporary sibling, never following temp symlinks. Read-only directories, directories passed as notes and unreadable pre-save sources refuse without changing existing bytes.
+- Integration hardening: source fingerprints plus expected destination bytes refuse stale rename plans; reference definitions are rewritten once; dotted/case/relative note names and shortest attachment basenames resolve; attachment events update completions. Shared tag/alias/unresolved memberships use ordered sets, and backlink slots use swap removal, avoiding degree-sized scans on a note patch. Incremental tables are compared against fresh rebuilds through 80 updates.
+- Watcher proofs now include another editor's atomic replace and reverting to older nib-written bytes. Self-write generations are consumed, rather than suppressing a later external revert. Own moves update paths/index immediately; external rename targets pass containment before reads. Added `open_deferred`/`start_watching` for Phase 5's post-present startup order, and journaled attachment updates alongside note updates.
+- Renderer operations borrow unchanged input runs; `into_owned` supports worker/retained results. The context receives an embedded note's source ID for its relative links/images. Snapshot tests cover borrowed/owned equivalence, all requested elements, matching numeric footnotes, depth-one embeds and independent parent/child resolution. Mixed CR/LF mapping uses the permitted `memchr` crate.
+- The original generated corpus measured only 31 MB; enlarged it to **40,205,169 bytes**. Two seed-7 runs produced identical **3,082** file hashes (including the symlink target). The enlarged 30k fixture is on `/tmp` tmpfs; the standard 3k fixture is under the home Btrfs cache. Both are warm-cache workstation measurements. The trace now waits for cancelled search workers before timing the independent renderer; it does not charge leftover search work to rendering.
+- Final 40 MB trace: open **0.075 ms**; 3,058-note index **100.947 ms**; 30,058-note index **417.603 ms**; parse p50/p99 **13.582/19.246 µs**; completion **0.615 µs**; search first batch **0.714 ms**; render **7.367 ms**; 20k listing **15.599 ms**; matcher **0.196 ms**. Every Goal A workstation target is met. Numbers remain printed by `check.sh`, without failing on scheduling noise (D7). GUI-only and Thinkpad rows remain for their owning phases.
+- Core line coverage **94.52%**, measured with cargo-llvm-cov 0.9.1 and extracted Fedora LLVM 22.1.8 under `/tmp/nib-llvm-tools`. `RUSTDOCFLAGS='-D warnings' cargo doc --no-deps -p nib-core -p nib-vault` is clean. The actual Trek clipboard encoder was run from a temporary dependent crate, and its captured output matches the committed URI fixture byte-for-byte; the Trek checkout remains unchanged.
+- §5 now reflects the actual public API. `HANDOFF-A.md` explains startup, every VaultEvent, index patches, cancellation, source formats, buffer edits, source-aware reading operations, containment/theme resources, refinements and Goal B/C ownership. The binary remains the required CLI stub and the GUI smoke remains explicitly skipped until Phase 5. No real-vault or repository-name changes were made.
 
 ---
 
