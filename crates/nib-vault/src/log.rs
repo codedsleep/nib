@@ -14,15 +14,22 @@ impl log::Log for Logger {
 static LOGGER: Logger = Logger;
 /// Install stderr logging once. Never log note contents.
 pub fn init() {
-    let level = match std::env::var("NIB_LOG").as_deref() {
-        Ok("debug") => log::LevelFilter::Debug,
-        Ok("info") => log::LevelFilter::Info,
-        _ => log::LevelFilter::Warn,
-    };
+    let level = level(std::env::var("NIB_LOG").as_deref().unwrap_or_default());
     if log::set_logger(&LOGGER).is_ok() {
         log::set_max_level(level);
     }
 }
+
+fn level(value: &str) -> log::LevelFilter {
+    match value {
+        "debug" => log::LevelFilter::Debug,
+        "info" => log::LevelFilter::Info,
+        "error" => log::LevelFilter::Error,
+        "off" => log::LevelFilter::Off,
+        _ => log::LevelFilter::Warn,
+    }
+}
+
 /// A timed scope, printed when `NIB_TRACE=1`.
 pub struct Span {
     name: &'static str,
@@ -54,4 +61,23 @@ macro_rules! trace_span {
     ($name:expr) => {
         let _nib_trace_span = $crate::log::Span::new($name);
     };
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn documented_levels() {
+        use log::LevelFilter::{Debug, Error, Info, Off, Warn};
+        for (value, expected) in [
+            ("debug", Debug),
+            ("info", Info),
+            ("warn", Warn),
+            ("error", Error),
+            ("off", Off),
+            ("", Warn),
+            ("unknown", Warn),
+        ] {
+            assert_eq!(super::level(value), expected);
+        }
+    }
 }
