@@ -14,15 +14,15 @@ jobs:
     env:
       CARGO_BUILD_JOBS: 2
       NIB_ALLOW_ROOTS: ''
+      RUSTUP_TOOLCHAIN: '1.98.1'
     steps:
       - uses: actions/checkout@v4
       - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-4-dev libgtksourceview-5-dev scdoc
-          rustup update stable --no-self-update
-          rustup default stable
-          rustup component add rustfmt clippy
+          rustup toolchain install "$RUSTUP_TOOLCHAIN" --profile minimal --component rustfmt --component clippy
+          rustup default "$RUSTUP_TOOLCHAIN"
       - name: Verify tag and sources
         run: |
           version=$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -1)
