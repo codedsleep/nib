@@ -97,17 +97,22 @@ pub fn write_quit(app: &Rc<App>, _: &str) {
     }
 }
 
-/// `:q`, `Alt+W`: close the tab. With autosave on, its edits are saved first;
-/// with autosave off a modified tab asks.
+/// `:q`, `Alt+W`: close the tab.
 pub fn quit(app: &Rc<App>, _: &str) {
     let tab = app.tabs.current();
+    close_tab(app, &tab);
+}
+
+/// Close a tab. With autosave on, its edits are saved first; with autosave
+/// off a modified tab asks.
+pub fn close_tab(app: &Rc<App>, tab: &Rc<crate::editor::Tab>) {
     if !tab.buffer.is_modified() {
-        app.tabs.close(app, &tab);
+        app.tabs.close(app, tab);
         return;
     }
     if app.config.borrow().editor.autosave && tab.path.borrow().is_some() {
-        if editor::save(app, &tab) {
-            app.tabs.close(app, &tab);
+        if editor::save(app, tab) {
+            app.tabs.close(app, tab);
         }
         return;
     }
@@ -115,11 +120,62 @@ pub fn quit(app: &Rc<App>, _: &str) {
         "{} has unsaved changes. Close it anyway?",
         tab.display_path(app)
     );
+    let tab = tab.clone();
     dialogs::ask(app, &question, move |app, yes| {
         if yes {
             app.tabs.close(app, &tab);
         }
     });
+}
+
+/// `:tab N|new|close|next|prev`.
+pub fn tab(app: &Rc<App>, arg: &str) {
+    match arg {
+        "" | "new" => {
+            app.tabs.new_tab();
+            app.tabs.focus_current();
+        }
+        "close" => quit(app, ""),
+        "next" => app.tabs.cycle(1),
+        "prev" | "previous" => app.tabs.cycle(-1),
+        n => match n.parse::<usize>() {
+            Ok(n) if (1..=app.tabs.len()).contains(&n) => {
+                app.tabs.select(n - 1);
+                app.tabs.focus_current();
+            }
+            _ => app
+                .status
+                .error(&format!("no tab {n}: :tab N|new|close|next|prev")),
+        },
+    }
+}
+
+/// `:{N}` for vim-off users (vim handles `:N` itself): go to a line.
+pub fn goto_line(app: &Rc<App>, arg: &str) {
+    let go = |app: &Rc<App>, text: &str| match text.trim().parse::<u32>() {
+        Ok(n) => {
+            let tab = app.tabs.current();
+            tab.goto_line(n);
+            tab.view.grab_focus();
+        }
+        Err(_) => app.status.error("a line number"),
+    };
+    if arg.is_empty() {
+        dialogs::prompt(app, "Go to line", "", move |app, text| {
+            if let Some(text) = text {
+                go(app, &text);
+            }
+        });
+    } else {
+        go(app, arg);
+    }
+}
+
+/// `:reindex`: parse the whole vault again.
+pub fn reindex(app: &Rc<App>, _: &str) {
+    app.index_ready.set(false);
+    app.vault.start_index();
+    app.status.set_index("indexing…");
 }
 
 /// `:q!`: close the tab, dropping unsaved edits.

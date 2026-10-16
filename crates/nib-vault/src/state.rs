@@ -69,6 +69,20 @@ pub fn load_config(paths: &Paths, guard: &Guard) -> Result<(Config, Vec<Warning>
         Err(e) => Err(e.into()),
     }
 }
+/// The text of `nib.toml` for `:config` (created with the defaults if absent).
+/// Additive, Goal B.
+pub fn config_text(paths: &Paths, guard: &Guard) -> Result<String, VaultError> {
+    load_config(paths, guard)?;
+    Ok(std::fs::read_to_string(paths.config.join("nib.toml"))?)
+}
+
+/// Write `nib.toml` atomically from the `:config` tab. Additive, Goal B.
+pub fn save_config_text(paths: &Paths, guard: &Guard, text: &str) -> Result<(), VaultError> {
+    fsx::create_dir_all(guard, &paths.config)?;
+    fsx::save(guard, &paths.config.join("nib.toml"), text.as_bytes())?;
+    Ok(())
+}
+
 /// Saved cursor and note per tab.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]

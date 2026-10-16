@@ -125,6 +125,122 @@ pub static ENTRIES: &[Entry] = &[
         &["trash"],
         fileops::trash_command,
     ),
+    entry(
+        "new-tab",
+        "New tab",
+        W,
+        &["<Alt>t"],
+        &["tabnew"],
+        |app, _| commands::tab(app, "new"),
+    ),
+    entry(
+        "close-tab-key",
+        "Close the tab",
+        W,
+        &["<Alt>w"],
+        &[],
+        commands::quit,
+    ),
+    entry(
+        "previous-tab",
+        "Previous tab",
+        W,
+        &["<Alt>bracketleft"],
+        &[],
+        |app, _| app.tabs.cycle(-1),
+    ),
+    entry(
+        "next-tab",
+        "Next tab",
+        W,
+        &["<Alt>bracketright"],
+        &[],
+        |app, _| app.tabs.cycle(1),
+    ),
+    entry(
+        "tab",
+        "Tab N, new, close, next or prev",
+        C,
+        &[],
+        &["tab"],
+        commands::tab,
+    ),
+    entry(
+        "history-back",
+        "Back to the tab's previous note",
+        W,
+        &["<Alt>Left"],
+        &[],
+        |app, _| {
+            app.history(true);
+        },
+    ),
+    entry(
+        "history-forward",
+        "Forward to the tab's next note",
+        W,
+        &["<Alt>Right"],
+        &[],
+        |app, _| {
+            app.history(false);
+        },
+    ),
+    entry(
+        "goto-line",
+        "Go to a line",
+        C,
+        &[],
+        &["goto"],
+        commands::goto_line,
+    ),
+    entry(
+        "daily",
+        "Today's daily note",
+        W,
+        &["<Alt>d"],
+        &["daily"],
+        crate::notes::daily,
+    ),
+    entry(
+        "new-note",
+        "New note",
+        W,
+        &["<Alt>n"],
+        &["new"],
+        crate::notes::new_note,
+    ),
+    entry(
+        "template",
+        "Insert a template",
+        W,
+        &["<Alt><Shift>t"],
+        &["template"],
+        crate::notes::template,
+    ),
+    entry(
+        "paste-image",
+        "Paste an image as an attachment",
+        C,
+        &[],
+        &["paste-image"],
+        |app, _| {
+            crate::attach::paste_image(app);
+        },
+    ),
+    entry("attach", "Attach files", C, &[], &["attach"], |app, _| {
+        crate::attach::choose(app);
+    }),
+    entry("config", "Edit nib.toml", C, &[], &["config"], |app, _| {
+        crate::config::open(app);
+    }),
+    entry(
+        "reindex",
+        "Index the vault again",
+        C,
+        &[],
+        &["reindex"],
+        commands::reindex,
+    ),
     // ---- finder ----
     entry(
         "switcher",

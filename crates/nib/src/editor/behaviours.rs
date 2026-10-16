@@ -87,6 +87,7 @@ pub fn controller(app: &Rc<App>, tab: &std::rc::Weak<Tab>) -> gtk::EventControll
 
 pub fn install(app: &Rc<App>, tab: &Rc<Tab>) {
     tab.view.add_controller(tab.keys.clone());
+    crate::attach::drop_target(app, &tab.view);
     // Ctrl+click follows the link under the pointer.
     let click = gtk::GestureClick::new();
     click.set_propagation_phase(gtk::PropagationPhase::Capture);
@@ -134,6 +135,12 @@ fn on_key(
 ) -> glib::Propagation {
     use gtk::gdk::{Key, ModifierType as M};
     if completion::key(app, tab, keyval, state) {
+        return glib::Propagation::Stop;
+    }
+    // Ctrl+V with an image, in insert mode or with vim off (G2); otherwise
+    // the key is vim's or GTK's own paste.
+    if vim::inserting(tab) && tab.view.is_editable() && crate::attach::wants_ctrl_v(keyval, state) {
+        crate::attach::paste_image(app);
         return glib::Propagation::Stop;
     }
     if let Some(entry) = registry::chord(keyval, state) {

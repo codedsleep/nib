@@ -551,6 +551,16 @@ fn open_candidate(app: &Rc<App>, target: &CandidateTarget, new_tab: bool) {
     }
 }
 
+/// Match `candidates` in the open finder, rows showing their labels.
+pub fn match_rows(app: &Rc<App>, candidates: Vec<Candidate>) {
+    app.finder.match_over(app, candidates, candidate_rows);
+}
+
+/// Pass a query to the open finder's matcher.
+pub fn query(app: &Rc<App>, text: &str) {
+    app.finder.set_query(text);
+}
+
 /// Open the finder with a source.
 pub fn open(app: &Rc<App>, source: impl FinderSource + 'static, query: &str) {
     let source: Rc<dyn FinderSource> = Rc::new(source);

@@ -72,7 +72,10 @@ pub fn sync(app: &Rc<App>, tab: &Rc<Tab>) {
 
 /// Let go of the view (`editor.vim` turned off, or the tab closing).
 pub fn detach(tab: &Tab) {
-    if let Some(v) = tab.vim.borrow_mut().take() {
+    // Out of the cell first: letting go of the view notifies the bar text,
+    // whose handler reads the cell.
+    let vim = tab.vim.borrow_mut().take();
+    if let Some(v) = vim {
         v.context.set_client_widget(None::<&gtk::Widget>);
         tab.view.remove_controller(&v.controller);
     }

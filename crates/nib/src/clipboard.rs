@@ -104,3 +104,29 @@ pub async fn read_files() -> Option<(Vec<PathBuf>, bool)> {
     let paths: Vec<PathBuf> = paths.into_iter().map(PathBuf::from).collect();
     (!paths.is_empty()).then_some((paths, cut))
 }
+
+/// A texture on the clipboard (a screenshot), for `Ctrl+V` / `:paste-image`.
+pub async fn read_texture() -> Option<gdk::Texture> {
+    let clipboard = clipboard()?;
+    if !clipboard
+        .formats()
+        .contains_type(gdk::Texture::static_type())
+    {
+        return None;
+    }
+    clipboard.read_texture_future().await.ok().flatten()
+}
+
+/// Whether the clipboard offers a texture right now.
+pub fn has_texture() -> bool {
+    clipboard().is_some_and(|c| offers_texture(&c))
+}
+
+/// Another program's offer lists MIME types; GDK can turn `image/png` and
+/// friends into a texture.
+fn offers_texture(clipboard: &gdk::Clipboard) -> bool {
+    clipboard
+        .formats()
+        .union_deserialize_types()
+        .contains_type(gdk::Texture::static_type())
+}

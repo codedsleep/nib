@@ -251,6 +251,10 @@ pub struct App {
     /// `:qa` answered "quit anyway": do not save on the way out.
     pub discard_on_close: Cell<bool>,
     pub session: RefCell<Session>,
+    /// The first note was named on the command line (not the session's).
+    pub explicit_note: Cell<bool>,
+    /// The session as last written, to skip unchanged saves.
+    pub saved_session: RefCell<Option<Session>>,
     /// The open `F1` key list and its filtered model.
     pub help: RefCell<Option<(gtk::Window, gtk::FilterListModel)>>,
     pub t0: Instant,
@@ -316,11 +320,14 @@ impl App {
             discard_on_close: Cell::new(false),
             session: RefCell::new(session),
             help: RefCell::new(None),
+            saved_session: RefCell::new(None),
+            explicit_note: Cell::new(explicit),
             t0,
             this: this.clone(),
         });
         app.layout();
         registry::install(&app);
+        Self::connect_window(&app);
         let tab = app.tabs.new_tab();
         match first {
             Some((path, Ok(text))) => {
@@ -401,7 +408,12 @@ impl App {
         if let Err(e) = self.vault.start_watching() {
             self.status.error(&format!("watching: {e}"));
         }
-        self.files.start(self);
+        self.files.start(
+            self,
+            self.explicit_note.get()
+                || self.session.borrow().folder.is_empty()
+                    && self.session.borrow().cursor.is_empty(),
+        );
         self.status.set_index("indexing…");
         // Debug builds can hold the index back to check the not-ready paths.
         let delay = std::env::var("NIB_TEST_INDEX_DELAY_MS")
@@ -422,6 +434,8 @@ impl App {
             if let Some(app) = weak.upgrade() {
                 editor::load_language(&app);
                 app.remember_vault();
+                crate::session::restore(&app);
+                crate::session::start_timer(&app);
             }
         });
     }
@@ -486,60 +500,154 @@ impl App {
     }
 
     /// Handle a further command line (or the first one's note options).
-    pub fn invocation(self: &Rc<Self>, _inv: &nib_core::cli::Invocation, path: Option<PathBuf>) {
+    /// A command line for the open window: a note opens in a new tab,
+    /// `--new` and `--daily` act here. Another vault needs `--profile`.
+    pub fn invocation(self: &Rc<Self>, inv: &nib_core::cli::Invocation, path: Option<PathBuf>) {
+        if let Some(vault) = &inv.vault
+            && vault.canonicalize().ok().as_deref() != Some(self.vault.root())
+        {
+            self.status.error(&format!(
+                "{} is open here; a second vault needs nib --profile NAME",
+                self.vault_name()
+            ));
+            return;
+        }
         if let Some(path) = path {
-            self.open_path(&path, false);
+            self.open_path(&path, true);
+        }
+        if let Some(title) = &inv.new {
+            crate::notes::new_note(self, title);
+        }
+        if inv.daily {
+            crate::notes::daily(self, "");
         }
     }
 
     /// Open a path from outside: a note in the current tab, or a folder in the column.
     pub fn open_path(self: &Rc<Self>, path: &Path, new_tab: bool) {
-        if path.is_dir() {
-            self.files.show(self, path);
+        // The folder canonical, the name as given: a symlinked note stays itself.
+        let path = &match (
+            path.parent().and_then(|p| p.canonicalize().ok()),
+            path.file_name(),
+        ) {
+            (Some(dir), Some(name)) if !path.is_dir() => dir.join(name),
+            _ => path.canonicalize().unwrap_or_else(|_| path.to_owned()),
+        };
+        if !path.starts_with(self.vault.root()) {
+            self.status.error(&format!(
+                "{} is outside this vault; a second vault needs nib --profile NAME",
+                path.display()
+            ));
             return;
         }
-        if !path.starts_with(self.vault.root()) {
-            self.status
-                .error(&format!("{} is outside this vault", path.display()));
+        if path.is_dir() {
+            self.files.show(self, path);
             return;
         }
         self.open_note(path, new_tab, None);
     }
 
-    /// Open a note path in the current (or a new) tab, at an optional line.
+    /// Open a note: its tab if one shows it already, else a new tab or the
+    /// current one (whose previous note goes on its history).
     pub fn open_note(self: &Rc<Self>, path: &Path, new_tab: bool, line: Option<u32>) {
-        let _ = new_tab;
-        if crate::reading::is_image(path) {
-            self.open_image(path);
+        if let Some(i) = self.tabs.index_of(path) {
+            self.tabs.select(i);
+            let tab = self.tabs.current();
+            if let Some(line) = line {
+                tab.goto_line(line);
+            }
+            self.tabs.focus_current();
             return;
         }
-        match self.vault.read_note(path) {
-            Ok(text) => {
-                let tab = self.tabs.current();
-                editor::save_if_modified(self, &tab);
-                self.completion.close();
+        let current = self.tabs.current();
+        // An empty untitled tab is used rather than left behind.
+        let blank = current.path.borrow().is_none()
+            && current.buffer.char_count() == 0
+            && !current.buffer.is_modified();
+        let tab = if new_tab && !blank {
+            self.tabs.new_tab()
+        } else {
+            current
+        };
+        self.load_into(&tab, path, line, true);
+    }
+
+    /// Show a note (or an image) in a given tab.
+    pub fn load_into(
+        self: &Rc<Self>,
+        tab: &Rc<editor::Tab>,
+        path: &Path,
+        line: Option<u32>,
+        history: bool,
+    ) {
+        let note = if crate::reading::is_image(path) {
+            None
+        } else {
+            match self.vault.read_note(path) {
+                Ok(n) => Some(n),
+                Err(e) => {
+                    self.status
+                        .error(&format!("cannot open {}: {e}", self.relative(path)));
+                    return;
+                }
+            }
+        };
+        editor::save_if_modified(self, tab);
+        self.completion.close();
+        let previous = tab.path.borrow().clone();
+        if history
+            && let Some(previous) = previous.filter(|p| p != path)
+            && !tab.config.get()
+        {
+            let at = u32::try_from(tab.cursor_line()).unwrap_or(1);
+            tab.back.borrow_mut().push((previous, at));
+            tab.forward.borrow_mut().clear();
+        }
+        tab.config.set(false);
+        match note {
+            None => self.show_image(tab, path),
+            Some(text) => {
                 let was_image = tab.image.replace(false);
                 tab.load(self, path, text, line.unwrap_or(1));
                 if was_image {
-                    crate::reading::set_mode(self, &tab, crate::reading::Mode::Source);
+                    crate::reading::set_mode(self, tab, crate::reading::Mode::Source);
                 } else if tab.mode.get() != crate::reading::Mode::Source {
-                    crate::reading::render(self, &tab);
+                    crate::reading::render(self, tab);
                 }
-                self.update_title();
-                self.panel.queue(self);
-                tab.view.grab_focus();
             }
-            Err(e) => self
-                .status
-                .error(&format!("cannot open {}: {e}", self.relative(path))),
+        }
+        tab.refresh_label(self);
+        if self.tabs.is_current(tab) {
+            self.update_title();
+            self.panel.queue(self);
+            self.tabs.focus_current();
         }
     }
 
-    /// An image file in a reading tab.
-    pub fn open_image(self: &Rc<Self>, path: &Path) {
+    /// `Alt+Left` / `Alt+Right`: the tab's previous or next note, at its line.
+    pub fn history(self: &Rc<Self>, back: bool) {
         let tab = self.tabs.current();
-        editor::save_if_modified(self, &tab);
-        self.completion.close();
+        let (from, to) = if back {
+            (&tab.back, &tab.forward)
+        } else {
+            (&tab.forward, &tab.back)
+        };
+        let Some((path, line)) = from.borrow_mut().pop() else {
+            self.status.notice(if back {
+                "no earlier note in this tab"
+            } else {
+                "no later note in this tab"
+            });
+            return;
+        };
+        if let Some(current) = tab.path.borrow().clone() {
+            let at = u32::try_from(tab.cursor_line()).unwrap_or(1);
+            to.borrow_mut().push((current, at));
+        }
+        self.load_into(&tab, &path, Some(line), false);
+    }
+
+    fn show_image(self: &Rc<Self>, tab: &Rc<editor::Tab>, path: &Path) {
         *tab.path.borrow_mut() = Some(path.to_owned());
         tab.read_only.set(true);
         tab.image.set(true);
@@ -547,11 +655,10 @@ impl App {
         tab.buffer.set_modified(false);
         tab.view.set_editable(false);
         if tab.mode.get() == crate::reading::Mode::Reading {
-            crate::reading::render(self, &tab);
+            crate::reading::render(self, tab);
         } else {
-            crate::reading::set_mode(self, &tab, crate::reading::Mode::Reading);
+            crate::reading::set_mode(self, tab, crate::reading::Mode::Reading);
         }
-        self.update_title();
     }
 
     /// Vault-relative display path.
@@ -581,6 +688,7 @@ impl App {
 
     pub fn update_title(&self) {
         let tab = self.tabs.current();
+        tab.refresh_label(self);
         let note = tab.title(self);
         self.window
             .set_title(Some(&format!("{note} — {} — nib", self.vault_name())));
@@ -630,6 +738,8 @@ impl App {
         }
     }
 
+    /// After the main loop: edits only (the session was saved at close,
+    /// while the widgets still said what was visible).
     fn shutdown(&self) {
         if self.discard_on_close.get() || !self.config.borrow().editor.autosave {
             return;
@@ -637,6 +747,48 @@ impl App {
         for tab in self.tabs.all() {
             editor::save_if_modified(self, &tab);
         }
+    }
+
+    /// Save every modified note (autosave on window focus-out, P§16).
+    pub fn autosave_all(&self) {
+        if !self.config.borrow().editor.autosave {
+            return;
+        }
+        for tab in self.tabs.all() {
+            if !tab.config.get() {
+                editor::save_if_modified(self, &tab);
+            }
+        }
+    }
+
+    fn connect_window(app: &Rc<Self>) {
+        let weak = app.this.clone();
+        app.window.connect_is_active_notify(move |w| {
+            let Some(app) = weak.upgrade() else { return };
+            if w.is_active() {
+                // Watches ran out (ENOSPC): re-list what is shown on focus-in.
+                if app.vault.needs_relist() {
+                    app.files.reload(&app);
+                }
+            } else {
+                app.autosave_all();
+            }
+        });
+        let weak = app.this.clone();
+        app.window.connect_close_request(move |_| {
+            if let Some(app) = weak.upgrade() {
+                crate::session::save(&app);
+                if !app.discard_on_close.get() {
+                    app.autosave_all();
+                }
+                // Vim keeps marks in the buffers; let go before the views go.
+                app.completion.close();
+                for tab in app.tabs.all() {
+                    editor::vim::detach(&tab);
+                }
+            }
+            glib::Propagation::Proceed
+        });
     }
 }
 

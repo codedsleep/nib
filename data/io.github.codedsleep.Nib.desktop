@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=nib
+GenericName=Notes
+Comment=Markdown notes for an Obsidian vault, driven with vim motions
+Exec=nib %F
+Icon=io.github.codedsleep.Nib
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/markdown;
+StartupNotify=true
+StartupWMClass=io.github.codedsleep.Nib
+Keywords=markdown;notes;obsidian;wiki;vim;

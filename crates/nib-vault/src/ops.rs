@@ -342,6 +342,7 @@ fn execute(
                 fsx::copy(&inner.guard, source, &to)?;
                 inner.invalidate(&folder);
                 summary.files = 1;
+                summary.created.push(to);
             }
         }
     }

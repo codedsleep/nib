@@ -297,10 +297,11 @@ impl Files {
         self.entry.add_controller(entry_keys);
     }
 
-    /// Post-present start: list the remembered folder (or the opened note's).
-    pub fn start(&self, app: &Rc<App>) {
+    /// Post-present start: list the session's folder, or the folder of a
+    /// note named on the command line.
+    pub fn start(&self, app: &Rc<App>, follow_note: bool) {
         let tab = app.tabs.current();
-        let note = tab.path.borrow().clone();
+        let note = tab.path.borrow().clone().filter(|_| follow_note);
         if let Some(note) = note
             && let Some(parent) = note.parent()
         {

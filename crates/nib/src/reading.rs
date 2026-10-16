@@ -1065,6 +1065,14 @@ pub fn set_mode(app: &Rc<App>, tab: &Rc<Tab>, mode: Mode) {
     app.update_title();
 }
 
+/// Render again even though the text did not change (the scheme did).
+pub fn rerender(app: &Rc<App>, tab: &Rc<Tab>) {
+    if let Some(r) = tab.reading.borrow().as_ref() {
+        r.rendered.set(None);
+    }
+    render(app, tab);
+}
+
 /// `Alt+E`, `:read`, `:edit`: source ↔ reading.
 pub fn toggle(app: &Rc<App>) {
     let tab = app.tabs.current();

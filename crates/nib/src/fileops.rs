@@ -34,6 +34,10 @@ pub enum Pending {
     CreateFolder {
         path: PathBuf,
     },
+    /// A file copied into the attachments folder for a tab's link.
+    Attachment {
+        tab: u64,
+    },
 }
 
 fn verb(p: &Pending) -> &'static str {
@@ -42,7 +46,7 @@ fn verb(p: &Pending) -> &'static str {
         Pending::Edits => "updating links",
         Pending::Trash { .. } => "trashing",
         Pending::Paste { cut: true, .. } => "moving",
-        Pending::Paste { .. } => "copying",
+        Pending::Paste { .. } | Pending::Attachment { .. } => "copying",
         Pending::CreateNote { .. } | Pending::CreateFolder { .. } => "creating",
     }
 }
@@ -171,6 +175,7 @@ fn done(app: &Rc<App>, pending: Pending, summary: &OpSummary) {
             app.status
                 .notice(&format!("created {}", app.relative(&path)));
         }
+        Pending::Attachment { tab } => crate::attach::copied(app, tab, summary),
         Pending::CreateFolder { path } => {
             if let Some(name) = path.file_name() {
                 app.files.want_cursor(&name.to_string_lossy());

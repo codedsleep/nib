@@ -87,6 +87,9 @@ pub struct Tab {
     pub fmt: RefCell<TextFormat>,
     pub read_only: Cell<bool>,
     pub removed: Cell<bool>,
+    /// The file changed on disk while the buffer had edits: nothing saves it
+    /// automatically until `:w` (overwrite) or `:e!` (reload).
+    pub disk_changed: Cell<bool>,
     pub buffer: sourceview5::Buffer,
     pub view: sourceview5::View,
     pub scroller: gtk::ScrolledWindow,
@@ -107,6 +110,18 @@ pub struct Tab {
     pub image: Cell<bool>,
     /// Counts buffer changes, so the reading view knows when it is stale.
     pub edits: Cell<u64>,
+    /// The tab's button in the tab bar and its label.
+    pub button: gtk::ToggleButton,
+    label: gtk::Label,
+    /// When the tab was last current (the 32-tab limit closes the oldest).
+    pub used: Cell<u64>,
+    /// Notes this tab showed before, and after (`Alt+Left`/`Alt+Right`), with cursor lines.
+    pub back: RefCell<Vec<(PathBuf, u32)>>,
+    pub forward: RefCell<Vec<(PathBuf, u32)>>,
+    /// The tab edits `nib.toml` (`:config`), outside the vault.
+    pub config: Cell<bool>,
+    /// Saves 1 s after the last edit when `editor.autosave` is on.
+    autosave: RefCell<Option<Rc<Debounce>>>,
     /// The rest of a long note still to be inserted after the first frame.
     pending: RefCell<Option<String>>,
     /// Words of the last idle count, shown when the tab becomes current.
@@ -151,6 +166,12 @@ impl Tab {
         let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
         root.append(&banner);
         root.append(&content);
+        let label = gtk::Label::new(Some("untitled"));
+        label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        label.set_max_width_chars(24);
+        let button = gtk::ToggleButton::new();
+        button.set_child(Some(&label));
+        button.set_focusable(false);
         let tab = Rc::new_cyclic(|weak| Self {
             keys: behaviours::controller(app, weak),
             id,
@@ -158,6 +179,7 @@ impl Tab {
             fmt: RefCell::new(TextFormat::default()),
             read_only: Cell::new(false),
             removed: Cell::new(false),
+            disk_changed: Cell::new(false),
             buffer,
             view,
             scroller,
@@ -170,6 +192,13 @@ impl Tab {
             reading: RefCell::new(None),
             image: Cell::new(false),
             edits: Cell::new(0),
+            button,
+            label,
+            used: Cell::new(0),
+            back: RefCell::new(Vec::new()),
+            forward: RefCell::new(Vec::new()),
+            config: Cell::new(false),
+            autosave: RefCell::new(None),
             pending: RefCell::new(None),
             word_count: Cell::new(None),
             app: app.this.clone(),
@@ -194,9 +223,23 @@ impl Tab {
             }
         });
         *self.words.borrow_mut() = Some(words.clone());
+        let autosave = Debounce::new(Duration::from_secs(1), {
+            let weak_tab = weak_tab.clone();
+            let weak = weak.clone();
+            move || {
+                let (Some(tab), Some(app)) = (weak_tab.upgrade(), weak.upgrade()) else {
+                    return;
+                };
+                if app.config.borrow().editor.autosave && !tab.config.get() {
+                    save_if_modified(&app, &tab);
+                }
+            }
+        });
+        *self.autosave.borrow_mut() = Some(autosave.clone());
         let tab_split = weak_tab.clone();
         self.buffer.connect_changed(move |_| {
             words.poke();
+            autosave.poke();
             if let Some(tab) = tab_split.upgrade() {
                 tab.edits.set(tab.edits.get() + 1);
             }
@@ -221,6 +264,7 @@ impl Tab {
             let (Some(app), Some(tab)) = (weak2.upgrade(), tab2.upgrade()) else {
                 return;
             };
+            tab.refresh_label(&app);
             if app.tabs.is_current(&tab) {
                 app.update_title();
             }
@@ -252,6 +296,18 @@ impl Tab {
 
     /// `editor.max_width`: centre the text by widening the side margins, so the
     /// view itself stays the scrollable child (a width-requested box would not be).
+    /// Settings and scheme again, after `:config` changed them.
+    pub fn reapply(&self, app: &App) {
+        let config = app.config.borrow();
+        apply_settings(&self.view, &config);
+        if !self.config.get() {
+            self.buffer
+                .set_style_scheme(theme::scheme(&config.editor.style_scheme).as_ref());
+        }
+        drop(config);
+        self.fit_width(app, self.scroller.hadjustment().page_size());
+    }
+
     fn fit_width(&self, app: &App, width: f64) {
         let (margin, max) = {
             let c = app.config.borrow();
@@ -277,6 +333,7 @@ impl Tab {
         *self.fmt.borrow_mut() = note.fmt;
         self.read_only.set(note.read_only);
         self.removed.set(false);
+        self.disk_changed.set(false);
         self.pending.borrow_mut().take();
         self.buffer.begin_irreversible_action();
         match first_chunk(&note.text, line) {
@@ -366,6 +423,18 @@ impl Tab {
         }
     }
 
+    /// The tab bar label: the note's title, `●` when modified.
+    pub fn refresh_label(&self, app: &App) {
+        let title = self.title(app);
+        let text = if self.buffer.is_modified() {
+            format!("{title} ●")
+        } else {
+            title
+        };
+        self.label.set_text(&text);
+        self.button.set_tooltip_text(Some(&self.display_path(app)));
+    }
+
     /// One-based cursor line.
     pub fn cursor_line(&self) -> i32 {
         self.buffer.iter_at_mark(&self.buffer.get_insert()).line() + 1
@@ -445,6 +514,9 @@ pub fn apply_settings(view: &sourceview5::View, config: &nib_core::settings::Con
 
 /// Save one tab now (`Ctrl+S`, `:w`).
 pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
+    if tab.config.get() {
+        return crate::config::save(app, tab);
+    }
     if tab.read_only.get() {
         app.status.error(&format!(
             "{} is read-only (not UTF-8); nib never saves it",
@@ -461,6 +533,7 @@ pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
     match app.vault.save(&path, &text, &fmt) {
         Ok(_) => {
             tab.buffer.set_modified(false);
+            tab.disk_changed.set(false);
             if tab.removed.replace(false) {
                 app.status
                     .notice(&format!("recreated {}", app.relative(&path)));
@@ -475,10 +548,15 @@ pub fn save(app: &Rc<App>, tab: &Tab) -> bool {
     }
 }
 
+/// The automatic save (autosave, tab switch, focus-out, before a rename plan
+/// or a search). It never writes over a change made on disk, nor recreates a
+/// removed note: those wait for an explicit `:w` (P§16).
 pub fn save_if_modified(app: &App, tab: &Tab) {
     if tab.buffer.is_modified()
         && tab.path.borrow().is_some()
         && !tab.read_only.get()
+        && !tab.disk_changed.get()
+        && !tab.removed.get()
         && let Some(app) = app.this.upgrade()
     {
         save(&app, tab);
@@ -508,7 +586,7 @@ pub fn save_as(app: &Rc<App>, tab: &Tab, name: &str) {
     }
 }
 
-/// Alt+2: focus the current tab's editor.
+/// Alt+2: focus the current tab's view (the reading view in reading mode).
 pub fn focus(app: &Rc<App>) {
-    app.tabs.current().view.grab_focus();
+    app.tabs.focus_current();
 }
