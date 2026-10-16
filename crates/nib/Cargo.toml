@@ -1,0 +1,11 @@
+[package]
+name = "nib"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+[dependencies]
+nib-core.workspace = true
+nib-vault.workspace = true
+[lints]
+workspace = true
