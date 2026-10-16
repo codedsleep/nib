@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         );
         // Approx. 40 MB across 3,000 files, with realistic paragraph/link density.
         let mut body = header;
-        for j in 0..64 {
+        for j in 0..84 {
             let _ = write!(
                 body,
                 "Fixture paragraph {j}: deterministic seed {seed}, note {i}. Writing notes keeps ideas useful. This sentence is plain Markdown with unicode café and 世界.\n\n"
