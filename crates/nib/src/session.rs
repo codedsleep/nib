@@ -112,6 +112,7 @@ pub fn restore(app: &Rc<App>) {
             }
             tab
         };
+        tab.goto_position(state.line, state.column);
         if state.reading {
             reading::set_mode(app, &tab, reading::Mode::Reading);
         }

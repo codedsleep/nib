@@ -9,7 +9,7 @@ if [[ -z ${SECOND:-} ]]; then
     nib "$VAULT/linker04.md" >/dev/null
     settle 0.3
     focus_editor
-    vin type :2 key Return
+    vin type :2 key Return key l key l key l
     nib "$VAULT/folder00/note00000.md" >/dev/null
     settle 0.3
     vin type :20 key Return
@@ -34,6 +34,7 @@ else
         check "restored $f" test "$(jq -r "$f" <<<"$now")" = "$(jq -r "$f" "$before")"
     done
     check "the active tab's cursor line" test "$(jq -r .cursor.line <<<"$now")" = "$(jq -r .cursor.line "$before")"
+    check "the active tab's cursor column" test "$(jq -r .cursor.column <<<"$now")" = "$(jq -r .cursor.column "$before")"
     vin key 'alt+]'
     settle 0.3
     check "the reading tab came back in reading mode" test "$(q .reading.mode)" = reading

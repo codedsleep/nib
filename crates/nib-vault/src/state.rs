@@ -91,7 +91,7 @@ pub struct TabState {
     pub note: Option<nib_core::NoteId>,
     /// One-based line.
     pub line: u32,
-    /// Byte column.
+    /// Zero-based character column.
     pub column: u32,
     /// Reading mode.
     pub reading: bool,

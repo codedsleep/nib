@@ -389,11 +389,23 @@ impl Tab {
 
     /// Put the cursor at the start of a one-based line and scroll there.
     pub fn goto_line(&self, line: u32) {
+        self.goto_position(line, 0);
+    }
+
+    /// Restore a one-based line and zero-based character column, clamped to its end.
+    pub fn goto_position(&self, line: u32, column: u32) {
         let line = i32::try_from(line.saturating_sub(1)).unwrap_or(0);
-        let iter = self
+        let mut iter = self
             .buffer
             .iter_at_line(line)
             .unwrap_or_else(|| self.buffer.start_iter());
+        let mut end = iter;
+        end.forward_to_line_end();
+        iter.set_line_offset(
+            i32::try_from(column)
+                .unwrap_or(i32::MAX)
+                .min(end.line_offset()),
+        );
         self.buffer.place_cursor(&iter);
         let mark = self.buffer.get_insert();
         self.view.scroll_to_mark(&mark, 0.0, true, 0.0, 0.25);
