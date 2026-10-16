@@ -76,7 +76,19 @@ impl Index {
         }
         let ids: Vec<_> = index.notes.keys().cloned().collect();
         for id in ids {
-            index.attach(&id);
+            index.attach(&id, true);
+        }
+        for ids in index.tags.values_mut() {
+            ids.sort();
+            ids.dedup();
+        }
+        for ids in index.unresolved.values_mut() {
+            ids.sort();
+            ids.dedup();
+        }
+        for refs in index.backlinks.values_mut() {
+            refs.sort();
+            refs.dedup();
         }
         index
     }
@@ -142,7 +154,7 @@ impl Index {
             }
         }
     }
-    fn attach(&mut self, id: &NoteId) {
+    fn attach(&mut self, id: &NoteId, bulk: bool) {
         let targets: Vec<_> = self
             .notes
             .get(id)
@@ -161,9 +173,10 @@ impl Index {
         };
         for t in &m.tags {
             let v = self.tags.entry(t.clone()).or_default();
-            if !v.contains(id) {
+            if bulk {
                 v.push(id.clone());
-                v.sort();
+            } else if let Err(i) = v.binary_search(id) {
+                v.insert(i, id.clone());
             }
         }
         let mut changed_targets = BTreeSet::new();
@@ -181,15 +194,16 @@ impl Index {
                 }
                 LinkTarget::Unresolved(raw) => {
                     let v = self.unresolved.entry(raw.clone()).or_default();
-                    if !v.contains(id) {
+                    if bulk {
                         v.push(id.clone());
-                        v.sort();
+                    } else if let Err(i) = v.binary_search(id) {
+                        v.insert(i, id.clone());
                     }
                 }
                 _ => {}
             }
         }
-        for target in changed_targets {
+        for target in changed_targets.into_iter().filter(|_| !bulk) {
             if let Some(v) = self.backlinks.get_mut(&target) {
                 v.sort();
                 v.dedup();
@@ -220,7 +234,7 @@ impl Index {
         self.add_lookup(&meta);
         self.notes.insert(meta.id.clone(), meta);
         for id in affected {
-            self.attach(&id);
+            self.attach(&id, false);
         }
     }
     /// Remove one note and invalidate only sources whose resolution can change.
@@ -238,7 +252,7 @@ impl Index {
         }
         affected.remove(id);
         for a in affected {
-            self.attach(&a);
+            self.attach(&a, false);
         }
     }
     /// Change an identity; use watcher reparses after applying a rename plan.

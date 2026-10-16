@@ -120,6 +120,11 @@ impl Styles {
                 .fold(0, |bits, index| bits | (1 << index)),
         )
     }
+    fn insert(&mut self, name: &str) {
+        if let Some(i) = STYLE_NAMES.iter().position(|n| *n == name) {
+            self.0 |= 1 << i;
+        }
+    }
     /// Iterate the semantic GTK tag names to apply to this run.
     pub fn names(self) -> impl Iterator<Item = &'static str> {
         STYLE_NAMES
@@ -203,7 +208,7 @@ impl Op {
 fn push(
     out: &mut Vec<Op>,
     text: impl Into<String>,
-    tags: &[&'static str],
+    tags: Styles,
     lines: Range<u32>,
     link: Option<Arc<LinkTarget>>,
 ) {
@@ -211,7 +216,7 @@ fn push(
     if !text.is_empty() {
         out.push(Op::Text {
             text,
-            tags: Styles::new(tags),
+            tags,
             lines,
             link,
         });
@@ -231,8 +236,8 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
     let starts = line_starts(md);
     let mut out = Vec::with_capacity(starts.len().saturating_mul(8));
     let fm = frontmatter::parse(md);
-    let mut tags = Vec::<&'static str>::new();
-    let mut stack = Vec::<usize>::new();
+    let mut tags = Styles::default();
+    let mut stack = Vec::<Styles>::new();
     let mut destinations = Vec::new();
     let mut lists = Vec::<Option<u64>>::new();
     let mut skip = 0_u32;
@@ -350,7 +355,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                             push(
                                 &mut out,
                                 dest_url.to_string(),
-                                &["link"],
+                                Styles::new(&["link"]),
                                 lines.clone(),
                                 Some(Arc::new(target)),
                             );
@@ -359,7 +364,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     _ => push(
                         &mut out,
                         dest_url.to_string(),
-                        &["link"],
+                        Styles::new(&["link"]),
                         lines.clone(),
                         Some(Arc::new(target)),
                     ),
@@ -367,17 +372,17 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 skip = 1;
             }
             Event::Start(tag) => {
-                stack.push(tags.len());
+                stack.push(tags);
                 match tag {
                     Tag::Heading { level, .. } => {
-                        tags.push(["h1", "h2", "h3", "h4", "h5", "h6"][level as usize - 1]);
+                        tags.insert(["h1", "h2", "h3", "h4", "h5", "h6"][level as usize - 1]);
                     }
-                    Tag::Emphasis => tags.push("em"),
-                    Tag::Strong => tags.push("strong"),
-                    Tag::Strikethrough => tags.push("strike"),
+                    Tag::Emphasis => tags.insert("em"),
+                    Tag::Strong => tags.insert("strong"),
+                    Tag::Strikethrough => tags.insert("strike"),
                     Tag::BlockQuote(_) => {
                         quote = true;
-                        tags.push("quote");
+                        tags.insert("quote");
                         let first = md[span.clone()].lines().next().unwrap_or_default();
                         if let Some(raw) = first
                             .trim_start_matches('>')
@@ -388,7 +393,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                             push(
                                 &mut out,
                                 format!("{kind}{}", title.trim_end()),
-                                &["quote", "callout-title"],
+                                Styles::new(&["quote", "callout-title"]),
                                 lines.clone(),
                                 None,
                             );
@@ -399,14 +404,14 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                         }
                     }
                     Tag::CodeBlock(kind) => {
-                        tags.push("codeblock");
+                        tags.insert("codeblock");
                         if let CodeBlockKind::Fenced(language) = kind
                             && !language.is_empty()
                         {
                             push(
                                 &mut out,
                                 format!("{language}\n"),
-                                &["code-language"],
+                                Styles::new(&["code-language"]),
                                 lines.clone(),
                                 None,
                             );
@@ -415,7 +420,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     Tag::List(n) => lists.push(n),
                     Tag::Item => {
                         let level = lists.len().saturating_sub(1);
-                        tags.push(INDENTS[level.min(INDENTS.len() - 1)]);
+                        tags.insert(INDENTS[level.min(INDENTS.len() - 1)]);
                         let number = lists.last_mut().and_then(Option::as_mut).map(|n| {
                             let v = *n;
                             *n += 1;
@@ -425,11 +430,11 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                             || format!("{} ", ["•", "◦", "▪"][level % 3]),
                             |n| format!("{n}. "),
                         );
-                        push(&mut out, marker, &tags, lines.clone(), None);
+                        push(&mut out, marker, tags, lines.clone(), None);
                     }
                     Tag::Link { dest_url, .. } => {
                         let target = ctx.resolve(&dest_url);
-                        tags.push(if matches!(target, LinkTarget::Unresolved(_)) {
+                        tags.insert(if matches!(target, LinkTarget::Unresolved(_)) {
                             "unresolved-link"
                         } else {
                             "link"
@@ -438,8 +443,8 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     }
                     Tag::FootnoteDefinition(name) => {
                         footnote_start = Some(out.len());
-                        tags.push("footnote-definition");
-                        push(&mut out, format!("[{name}] "), &tags, lines.clone(), None);
+                        tags.insert("footnote-definition");
+                        push(&mut out, format!("[{name}] "), tags, lines.clone(), None);
                     }
                     Tag::Table(_) => table = Some(Vec::new()),
                     Tag::TableHead | Tag::TableRow => row.clear(),
@@ -485,7 +490,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                                     })
                                     .collect::<Vec<_>>()
                                     .join(" │ ");
-                                push(&mut out, s, &["table"], lines.clone(), None);
+                                push(&mut out, s, Styles::new(&["table"]), lines.clone(), None);
                                 out.push(Op::Newline {
                                     lines: lines.clone(),
                                 });
@@ -504,7 +509,7 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                     _ => {}
                 }
                 if let Some(n) = stack.pop() {
-                    tags.truncate(n);
+                    tags = n;
                 }
             }
             Event::Text(t) => {
@@ -515,15 +520,15 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                         push(
                             &mut out,
                             format!("{}{}", &t[2..end], &t[end + 1..]),
-                            &["quote", "callout-title"],
+                            Styles::new(&["quote", "callout-title"]),
                             lines,
                             None,
                         );
                     } else {
                         push(
                             &mut out,
-                            t.to_string(),
-                            &tags,
+                            t.into_string(),
+                            tags,
                             lines,
                             destinations.last().cloned(),
                         );
@@ -531,8 +536,8 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 } else {
                     push(
                         &mut out,
-                        t.to_string(),
-                        &tags,
+                        t.into_string(),
+                        tags,
                         lines,
                         destinations.last().cloned(),
                     );
@@ -542,12 +547,12 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                 if table.is_some() {
                     cell.push_str(&t);
                 } else {
-                    let mut code_tags = tags.clone();
-                    code_tags.push("code");
+                    let mut code_tags = tags;
+                    code_tags.insert("code");
                     push(
                         &mut out,
-                        t.to_string(),
-                        &code_tags,
+                        t.into_string(),
+                        code_tags,
                         lines,
                         destinations.last().cloned(),
                     );
@@ -571,10 +576,16 @@ fn render_depth(md: &str, ctx: &dyn RenderCtx, depth: u8) -> Vec<Op> {
                         footnotes.len() - 1
                     })
                     + 1;
-                push(&mut out, n.to_string(), &["footnote"], lines, None);
+                push(
+                    &mut out,
+                    n.to_string(),
+                    Styles::new(&["footnote"]),
+                    lines,
+                    None,
+                );
             }
             Event::Html(t) | Event::InlineHtml(t) => {
-                push(&mut out, t.to_string(), &tags, lines, None);
+                push(&mut out, t.into_string(), tags, lines, None);
             }
             _ => {}
         }
