@@ -30,6 +30,12 @@ echo "$HOME" `date`
 plain block
 ```
 
+````markdown
+```rust
+a shorter fence inside a longer one is content
+```
+````
+
 ## After the blocks
 NOTE
 open_note code.md
