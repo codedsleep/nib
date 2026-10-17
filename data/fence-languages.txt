@@ -1,0 +1,33 @@
+rust rust rs
+python3 python py python3 py3
+js javascript js mjs cjs node
+jsx jsx
+typescript typescript ts mts cts
+typescript-jsx tsx
+sh sh bash shell zsh ksh shellscript
+fish fish
+json json jsonc json5
+toml toml
+yaml yaml yml
+ini ini cfg conf systemd
+xml xml svg xsd plist
+html html htm xhtml
+css css
+scss scss sass
+c c h
+cpp cpp c++ cc cxx hpp hh
+c-sharp csharp c# cs
+go go golang
+java java
+kotlin kotlin kt kts
+swift swift
+zig zig
+glsl glsl vert frag shader
+sql sql mysql postgresql postgres psql sqlite plsql
+diff diff patch
+lua lua
+ruby ruby rb
+php php
+docker dockerfile docker containerfile
+makefile makefile make mk
+nix nix
