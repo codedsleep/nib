@@ -265,6 +265,22 @@ pub fn word_count(text: &str) -> usize {
         })
         .sum()
 }
+/// Whether a line opens a fenced code block that names its language
+/// (```` ```rust ````, `~~~ {.py}`): the editor's cue to load code highlighting.
+pub fn has_named_fence(text: &str) -> bool {
+    text.lines().any(|line| {
+        let line = line.trim_start();
+        let Some(mark) = line.chars().next().filter(|c| matches!(c, '`' | '~')) else {
+            return false;
+        };
+        let fence = line.len() - line.trim_start_matches(mark).len();
+        fence >= 3
+            && line[fence..]
+                .trim_start()
+                .trim_start_matches(['{', '.'])
+                .starts_with(|c: char| c.is_alphanumeric())
+    })
+}
 /// Live heading outline from the current buffer.
 pub fn outline(text: &str) -> Vec<crate::Heading> {
     crate::parse_note(
@@ -278,6 +294,21 @@ pub fn outline(text: &str) -> Vec<crate::Heading> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn named_fences() {
+        for text in ["```rust\n", "intro\n  ~~~ py\n", "````{.sh}\n", "```C++\n"] {
+            assert!(has_named_fence(text), "{text:?}");
+        }
+        for text in [
+            "```\ncode\n```\n",
+            "``rust``",
+            "~~ x",
+            "text ```rust",
+            "```  \n",
+        ] {
+            assert!(!has_named_fence(text), "{text:?}");
+        }
+    }
     #[test]
     fn editing() {
         for (s, next) in [
