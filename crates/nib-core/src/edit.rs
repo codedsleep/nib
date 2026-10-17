@@ -281,6 +281,27 @@ pub fn has_named_fence(text: &str) -> bool {
                 .starts_with(|c: char| c.is_alphanumeric())
     })
 }
+/// Fence names and the `GtkSourceView` language each selects; the editor's
+/// `nib-markdown.lang` is generated from the same file.
+const FENCE_LANGUAGES: &str = include_str!("../../../data/fence-languages.txt");
+/// The `GtkSourceView` language a fenced block's info string names, by the
+/// rules of the editor's Markdown: an optional `{` and `.`, then a name that
+/// ends at a space, comma, brace or the end (`rust,ignore`, `{.ts}`,
+/// `Python title="x"`). Case is ignored.
+pub fn fence_language(info: &str) -> Option<&'static str> {
+    let name = info.trim_start();
+    let name = name.strip_prefix('{').unwrap_or(name);
+    let name = name.strip_prefix('.').unwrap_or(name);
+    let name = name
+        .split([' ', '\t', ',', '{', '}'])
+        .next()
+        .filter(|n| !n.is_empty())?;
+    FENCE_LANGUAGES.lines().find_map(|line| {
+        let mut words = line.split_whitespace();
+        let id = words.next()?;
+        words.any(|w| w.eq_ignore_ascii_case(name)).then_some(id)
+    })
+}
 /// Live heading outline from the current buffer.
 pub fn outline(text: &str) -> Vec<crate::Heading> {
     crate::parse_note(
@@ -294,6 +315,24 @@ pub fn outline(text: &str) -> Vec<crate::Heading> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn fence_languages() {
+        for (info, id) in [
+            ("rust", Some("rust")),
+            ("ts", Some("typescript")),
+            ("TSX", Some("typescript-jsx")),
+            ("{.sh}", Some("sh")),
+            ("rust,ignore", Some("rust")),
+            ("Python title=\"x\"", Some("python3")),
+            ("  c++", Some("cpp")),
+            ("c#", Some("c-sharp")),
+            ("rusty", None),
+            ("", None),
+            ("{}", None),
+        ] {
+            assert_eq!(fence_language(info), id, "{info:?}");
+        }
+    }
     #[test]
     fn named_fences() {
         for text in ["```rust\n", "intro\n  ~~~ py\n", "````{.sh}\n", "```C++\n"] {

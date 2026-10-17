@@ -2,6 +2,12 @@
 
 All notable changes to nib are documented here, following Keep a Changelog.
 
+## [Unreleased]
+
+### Added
+
+- Reading view highlights fenced code in the same languages and scheme colours as the source view.
+
 ## [0.2.0] - 2026-10-17
 
 ### Added

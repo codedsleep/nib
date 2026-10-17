@@ -8,48 +8,21 @@ import re
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / 'data/language-specs/nib-markdown.lang'
 
-# GtkSourceView language id -> info-string names (matched case-insensitively).
-# Every id must be one of GtkSourceView 5's bundled languages, or the whole
-# file fails to load and the editor keeps plain Markdown.
+# data/fence-languages.txt: one GtkSourceView language id per line, then the
+# info-string names that select it (matched case-insensitively). nib-core
+# reads the same file for the reading view. Every id must be one of
+# GtkSourceView 5's bundled languages, or the whole file fails to load and
+# the editor keeps plain Markdown.
 #
 # Each language costs its parse time once per process, on the main thread,
-# when the first note with a code fence opens: this list measured ≈ 60 ms on
+# when the first note with a code fence opens: the list measured ≈ 60 ms on
 # the workstation, the full bundled set ≈ 150 ms. Julia, MATLAB, R, LaTeX and
 # CMake alone cost 10-20 ms each and are left out.
+TABLE = ROOT / 'data/fence-languages.txt'
 LANGUAGES = [
-    ('rust', ['rust', 'rs']),
-    ('python3', ['python', 'py', 'python3', 'py3']),
-    ('js', ['javascript', 'js', 'mjs', 'cjs', 'node']),
-    ('jsx', ['jsx']),
-    ('typescript', ['typescript', 'ts', 'mts', 'cts']),
-    ('typescript-jsx', ['tsx']),
-    ('sh', ['sh', 'bash', 'shell', 'zsh', 'ksh', 'shellscript']),
-    ('fish', ['fish']),
-    ('json', ['json', 'jsonc', 'json5']),
-    ('toml', ['toml']),
-    ('yaml', ['yaml', 'yml']),
-    ('ini', ['ini', 'cfg', 'conf', 'systemd']),
-    ('xml', ['xml', 'svg', 'xsd', 'plist']),
-    ('html', ['html', 'htm', 'xhtml']),
-    ('css', ['css']),
-    ('scss', ['scss', 'sass']),
-    ('c', ['c', 'h']),
-    ('cpp', ['cpp', 'c++', 'cc', 'cxx', 'hpp', 'hh']),
-    ('c-sharp', ['csharp', 'c#', 'cs']),
-    ('go', ['go', 'golang']),
-    ('java', ['java']),
-    ('kotlin', ['kotlin', 'kt', 'kts']),
-    ('swift', ['swift']),
-    ('zig', ['zig']),
-    ('glsl', ['glsl', 'vert', 'frag', 'shader']),
-    ('sql', ['sql', 'mysql', 'postgresql', 'postgres', 'psql', 'sqlite', 'plsql']),
-    ('diff', ['diff', 'patch']),
-    ('lua', ['lua']),
-    ('ruby', ['ruby', 'rb']),
-    ('php', ['php']),
-    ('docker', ['dockerfile', 'docker', 'containerfile']),
-    ('makefile', ['makefile', 'make', 'mk']),
-    ('nix', ['nix']),
+    (words[0], words[1:])
+    for words in (line.split() for line in TABLE.read_text().splitlines())
+    if words
 ]
 
 # A fence is three or more backticks or tildes, indented or not (fences sit

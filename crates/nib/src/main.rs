@@ -23,6 +23,7 @@ mod reading;
 mod registry;
 mod session;
 mod status;
+mod syntax;
 mod tabs;
 mod theme;
 

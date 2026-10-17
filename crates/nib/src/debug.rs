@@ -233,7 +233,7 @@ pub fn dump(app: &Rc<App>) -> String {
         .reading
         .borrow()
         .as_ref()
-        .map_or((0, 0, String::new(), 0), |r| {
+        .map_or((0, 0, String::new(), 0, 0), |r| {
             let (shown, waiting) = r.images();
             let text: String = r.text().chars().take(40_000).collect();
             (
@@ -241,6 +241,7 @@ pub fn dump(app: &Rc<App>) -> String {
                 waiting,
                 text,
                 crate::app::px(r.scroller.vadjustment().value()),
+                r.tokens.get(),
             )
         });
     let status = app.status.texts();
@@ -255,7 +256,7 @@ pub fn dump(app: &Rc<App>) -> String {
             "\"completion\":{{\"visible\":{},\"rows\":{}}},",
             "\"panel\":{{\"page\":{},\"rows\":{},\"section\":{}}},\"dialog\":{},",
             "\"finder\":{{\"visible\":{},\"source\":{},\"query\":{},\"rows\":{}}},",
-            "\"reading\":{{\"mode\":{},\"images\":{},\"waiting\":{},\"scroll\":{},\"heading\":{},\"scheme\":{},\"text\":{}}}}}\n"
+            "\"reading\":{{\"mode\":{},\"images\":{},\"waiting\":{},\"scroll\":{},\"tokens\":{},\"heading\":{},\"scheme\":{},\"text\":{}}}}}\n"
         ),
         list(tab_json),
         cursor.line() + 1,
@@ -303,6 +304,7 @@ pub fn dump(app: &Rc<App>) -> String {
         reading.0,
         reading.1,
         reading.3,
+        reading.4,
         json(&colours.0),
         json(&colours.1),
         json(&reading.2),

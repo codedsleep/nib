@@ -5,7 +5,7 @@ use crate::{
     app::App,
     debug,
     editor::{self, Debounce, Tab},
-    gtk, launch,
+    gtk, launch, syntax,
 };
 use nib_core::{
     LinkTarget, NoteId,
@@ -65,18 +65,25 @@ fn table() -> gtk::TextTagTable {
         .iter()
         .map(|n| (*n).to_owned()),
     );
-    for name in names.chain((0..32).map(|i| format!("indent-{i}"))).chain(
-        [
-            "embed",
-            "embed-title",
-            "task",
-            "frontmatter",
-            "frontmatter-raw",
-            "focus-link",
-        ]
-        .iter()
-        .map(|n| (*n).to_owned()),
-    ) {
+    let code = std::iter::once(syntax::PLAIN)
+        .chain(syntax::STYLES.iter().map(|(_, name)| *name))
+        .map(str::to_owned);
+    for name in names
+        .chain((0..32).map(|i| format!("indent-{i}")))
+        .chain(code)
+        .chain(
+            [
+                "embed",
+                "embed-title",
+                "task",
+                "frontmatter",
+                "frontmatter-raw",
+                "focus-link",
+            ]
+            .iter()
+            .map(|n| (*n).to_owned()),
+        )
+    {
         table.add(&gtk::TextTag::new(Some(&name)));
     }
     structure(&table);
@@ -191,8 +198,27 @@ pub fn restyle(scheme: Option<&sourceview5::StyleScheme>) {
         );
         apply("def:link-text", &["link", "focus-link"]);
         apply("def:strong-emphasis", &["strong"]);
+        // Code tokens: a style the scheme lacks leaves its tag blank.
+        for (style, name) in syntax::STYLES {
+            if let Some(tag) = table.lookup(name) {
+                scheme
+                    .and_then(|s| s.style(style))
+                    .unwrap_or_else(|| sourceview5::Style::builder().build())
+                    .apply(&tag);
+            }
+        }
+        if let Some(tag) = table.lookup(syntax::PLAIN) {
+            match scheme
+                .and_then(|s| s.style("text"))
+                .and_then(|t| t.foreground())
+            {
+                Some(fg) => tag.set_foreground(Some(&fg)),
+                None => tag.set_property("foreground-set", false),
+            }
+        }
         structure(table);
     });
+    syntax::set_scheme(scheme);
     let text = scheme.and_then(|s| s.style("text"));
     let (fg, bg) = text
         .map(|t| (t.foreground(), t.background()))
@@ -251,6 +277,8 @@ pub struct Reading {
     generation: Cell<u64>,
     /// The tab's edit count the view shows, if it is current.
     rendered: Cell<Option<u64>>,
+    /// Highlighted code tokens in the shown buffer, for `--test-dump`.
+    pub tokens: Cell<usize>,
 }
 
 /// Link resolution for one render: the current note is the source. The
@@ -321,6 +349,7 @@ impl Reading {
             rerender: RefCell::new(None),
             generation: Cell::new(0),
             rendered: Cell::new(None),
+            tokens: Cell::new(0),
         });
         reading.connect(app, tab);
         reading
@@ -653,6 +682,7 @@ struct Built {
     at: i32,
     hits: Vec<(i32, i32, Hit)>,
     anchors: Vec<(i32, gtk::Widget)>,
+    tokens: usize,
 }
 
 impl Built {
@@ -662,6 +692,7 @@ impl Built {
         let mut writer = Writer::default();
         writer.ops(app, reading, ops);
         writer.flush();
+        let tokens = writer.highlight();
         buffer.insert(&mut buffer.start_iter(), &writer.text);
         Self {
             iter: buffer.start_iter(),
@@ -671,6 +702,7 @@ impl Built {
             at: 0,
             hits: writer.hits,
             anchors: writer.anchors,
+            tokens,
         }
     }
 
@@ -700,8 +732,10 @@ impl Built {
             buffer,
             mut hits,
             anchors,
+            tokens,
             ..
         } = self;
+        reading.tokens.set(tokens);
         let mut children = Vec::with_capacity(anchors.len());
         for (offset, widget) in anchors.iter().rev() {
             let mut at = buffer.iter_at_offset(*offset);
@@ -741,6 +775,10 @@ struct Writer {
     spans: Vec<(i32, i32, Vec<&'static str>)>,
     hits: Vec<(i32, i32, Hit)>,
     anchors: Vec<(i32, gtk::Widget)>,
+    /// The info string of the fenced block being written.
+    fence: Option<String>,
+    /// Fenced blocks with their info strings, for highlighting.
+    code: Vec<(i32, i32, String)>,
 }
 
 impl Writer {
@@ -779,12 +817,53 @@ impl Writer {
         }
         let run = std::mem::take(&mut self.run);
         let names: Vec<&'static str> = self.tags.names().chain(self.extra).collect();
+        let (language, block) = (
+            names.contains(&"code-language"),
+            names.contains(&"codeblock"),
+        );
         let (start, end) = self.push(&run, names);
+        // A fenced block is its info-string line, then its code runs.
+        if language {
+            self.fence = Some(run.trim().to_owned());
+        } else if block {
+            if let Some(info) = &self.fence {
+                self.code.push((start, end, info.clone()));
+            }
+        } else {
+            self.fence = None;
+        }
         if let Some(link) = self.link.take() {
             self.hits.push((start, end, Hit::Link(link)));
         }
         self.run = run;
         self.run.clear();
+    }
+
+    /// Tag the tokens of every fenced block whose language nib knows; the
+    /// spans stay sorted by start for `Built::tag`. Returns the token count.
+    fn highlight(&mut self) -> usize {
+        if self.code.is_empty() {
+            return 0;
+        }
+        let started = Instant::now();
+        let bytes = byte_offsets(&self.text, self.code.iter().flat_map(|c| [c.0, c.1]));
+        let mut added = Vec::new();
+        for (i, (start, end, info)) in self.code.iter().enumerate() {
+            let code = &self.text[bytes[2 * i]..bytes[2 * i + 1]];
+            if let Some(tokens) = syntax::tokens(info, code) {
+                added.push((*start, *end, vec![syntax::PLAIN]));
+                added.extend(
+                    tokens
+                        .into_iter()
+                        .map(|(s, e, name)| (start + s, start + e, vec![name])),
+                );
+            }
+        }
+        let count = added.len();
+        self.spans.extend(added);
+        self.spans.sort_by_key(|s| s.0);
+        debug::trace_ms("reading_code", started);
+        count
     }
 
     fn insert(&mut self, text: &str, tags: &[&'static str]) -> (i32, i32) {
@@ -808,6 +887,13 @@ impl Writer {
                         self.tags = Styles::default();
                     }
                     self.run.push('\n');
+                    // A code block ends at its break, so a following block
+                    // (named or not) is its own run and is not highlighted
+                    // as this one's language.
+                    if self.tags.names().any(|n| n == "codeblock") {
+                        self.flush();
+                        self.fence = None;
+                    }
                 }
                 Op::Anchor { kind, lines } => self.anchor(app, reading, kind, lines.start),
             }
@@ -865,6 +951,22 @@ impl Writer {
             }
         }
     }
+}
+
+/// Byte offsets of ascending character offsets in `text`.
+fn byte_offsets(text: &str, chars: impl Iterator<Item = i32>) -> Vec<usize> {
+    let mut wanted = chars.peekable();
+    let mut out = Vec::new();
+    let ends = text.char_indices().map(|(b, _)| b).chain([text.len()]);
+    for (n, byte) in (0..).zip(ends) {
+        while wanted.next_if(|&w| w == n).is_some() {
+            out.push(byte);
+        }
+        if wanted.peek().is_none() {
+            break;
+        }
+    }
+    out
 }
 
 fn rule_width(reading: &Reading) -> i32 {
