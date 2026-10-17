@@ -7,15 +7,17 @@ arch=${1:-$(uname -m)}
 [[ $arch == x86_64 || $arch == aarch64 ]] || { echo "unsupported architecture: $arch" >&2; exit 2; }
 command -v scdoc >/dev/null || { echo 'Install scdoc to build the man page' >&2; exit 1; }
 python3 scripts/generate-docs.py --check
+python3 scripts/generate-markdown-lang.py --check
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
 install -Dm755 target/release/nib "$stage/bin/nib"
 strip "$stage/bin/nib"
 install -Dm644 data/io.github.codedsleep.Nib.desktop "$stage/share/applications/io.github.codedsleep.Nib.desktop"
 install -Dm644 data/io.github.codedsleep.Nib.svg "$stage/share/icons/hicolor/scalable/apps/io.github.codedsleep.Nib.svg"
-mkdir -p "$stage/share/man/man1" "$stage/share/gtksourceview-5/styles"
+mkdir -p "$stage/share/man/man1" "$stage/share/gtksourceview-5/styles" "$stage/share/gtksourceview-5/language-specs"
 scdoc <data/nib.1.scd >"$stage/share/man/man1/nib.1"
 install -m644 data/style-schemes/*.xml "$stage/share/gtksourceview-5/styles/"
+install -m644 data/language-specs/*.lang "$stage/share/gtksourceview-5/language-specs/"
 install -m755 scripts/install-files.sh "$stage/install-files.sh"
 install -m644 LICENSE README.md CHANGELOG.md "$stage/"
 mkdir -p target/dist

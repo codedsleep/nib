@@ -12,6 +12,7 @@ prefix="$tmp/prefix with spaces"
 scripts/install-files.sh -y --prefix "$prefix" --payload "$tmp/payload"
 [[ $("$prefix/bin/nib" --version) == "$(target/release/nib --version)" ]]
 [[ -s $prefix/share/man/man1/nib.1 && -s $prefix/share/gtksourceview-5/styles/nib-nord.xml ]]
+[[ -s $prefix/share/gtksourceview-5/language-specs/nib-markdown.lang ]]
 # An unrelated program, config and vault data must survive uninstall.
 printf 'keep' >"$prefix/bin/unrelated"
 scripts/install.sh -y --prefix "$prefix" --uninstall
