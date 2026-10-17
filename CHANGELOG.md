@@ -2,7 +2,7 @@
 
 All notable changes to nib are documented here, following Keep a Changelog.
 
-## [Unreleased]
+## [0.2.1] - 2026-10-17
 
 ### Added
 
