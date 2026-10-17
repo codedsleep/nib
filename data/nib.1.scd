@@ -376,6 +376,11 @@ _$XDG\_STATE\_HOME/nib/crash.log_
 _~/.local/share/gtksourceview-5/styles/nib-\*.xml_
 	Installed editor and reading-view colour schemes.
 
+_~/.local/share/gtksourceview-5/language-specs/nib-markdown.lang_
+	Markdown that highlights fenced code in the language its fence names.
+	Loaded the first time a note names one; other GtkSourceView applications
+	do not list it.
+
 # ENVIRONMENT
 
 *NIB\_LOG*

@@ -7,6 +7,7 @@ follow wikilinks, and find notes without leaving the keyboard.
 - Trek-style files column with selection, copy/cut/paste, XDG trash and link-aware renames.
 - Wikilink and tag completion, backlinks, outline, fuzzy switcher and streamed vault search.
 - Source, reading and split views; local images, callouts, task toggles and note embeds.
+- Fenced code highlighted in the language its fence names (```` ```rust ````, `~~~python`) in source view.
 - Daily notes, templates, pasted screenshots, file attachments, tabs and per-vault sessions.
 - Atomic saves that retain BOM and line endings, read-only previews for non-UTF-8 files,
   and external-change notices that protect modified buffers.
@@ -26,8 +27,8 @@ bash /tmp/nib-install.sh -y --version v0.1.0
 ```
 
 The installer downloads the release using `gh release download`, verifies its
-SHA256SUMS entry, and installs the binary, desktop file, icon, man page and
-style schemes into `~/.local`. Add `~/.local/bin` to PATH. Use `--prefix /ABS/DIR`
+SHA256SUMS entry, and installs the binary, desktop file, icon, man page,
+style schemes and Markdown language into `~/.local`. Add `~/.local/bin` to PATH. Use `--prefix /ABS/DIR`
 for another location or `--uninstall -y` to remove installed files while keeping
 config, sessions and notes. Without `--version`, the latest release is used.
 Noninteractive installation requires `-y`.
