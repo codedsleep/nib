@@ -63,7 +63,7 @@ thread_local! {
     static MARKDOWN: std::cell::OnceCell<Option<sourceview5::Language>> =
         const { std::cell::OnceCell::new() };
     /// nib's Markdown, which highlights fenced code in its own language
-    /// (`data/language-specs`). Parsing the embedded languages costs ≈ 90 ms
+    /// (`data/language-specs`). Parsing the embedded languages costs ≈ 100 ms
     /// once, so it loads only when a note first names a fence's language.
     static CODE: std::cell::OnceCell<Option<sourceview5::Language>> =
         const { std::cell::OnceCell::new() };

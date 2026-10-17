@@ -15,830 +15,2474 @@
     <style id="code-block" name="Code Block" map-to="def:preformatted-section"/>
   </styles>
   <definitions>
-    <context id="close-backticks" style-ref="code-block" end-parent="true">
+    <context id="close-backticks3" style-ref="code-block" end-parent="true">
       <match>^[ \t]*`{3,}[ \t]*$</match>
     </context>
 
-    <context id="close-tildes" style-ref="code-block" end-parent="true">
+    <context id="close-backticks4" style-ref="code-block" end-parent="true">
+      <match>^[ \t]*`{4,}[ \t]*$</match>
+    </context>
+
+    <context id="close-backticks5" style-ref="code-block" end-parent="true">
+      <match>^[ \t]*`{5,}[ \t]*$</match>
+    </context>
+
+    <context id="close-tildes3" style-ref="code-block" end-parent="true">
       <match>^[ \t]*~{3,}[ \t]*$</match>
     </context>
 
-    <context id="fenced-rust-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
+    <context id="close-tildes4" style-ref="code-block" end-parent="true">
+      <match>^[ \t]*~{4,}[ \t]*$</match>
+    </context>
+
+    <context id="close-tildes5" style-ref="code-block" end-parent="true">
+      <match>^[ \t]*~{5,}[ \t]*$</match>
+    </context>
+
+    <context id="fenced-rust-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="rust:rust"/>
       </include>
     </context>
 
-    <context id="fenced-python3-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-python3-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="python3:python3"/>
       </include>
     </context>
 
-    <context id="fenced-js-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-js-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="js:js"/>
       </include>
     </context>
 
-    <context id="fenced-jsx-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-jsx-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="jsx:jsx"/>
       </include>
     </context>
 
-    <context id="fenced-typescript-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-typescript-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="typescript:typescript"/>
       </include>
     </context>
 
-    <context id="fenced-typescript-jsx-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-typescript-jsx-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="typescript-jsx:typescript-jsx"/>
       </include>
     </context>
 
-    <context id="fenced-sh-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-sh-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="sh:sh"/>
       </include>
     </context>
 
-    <context id="fenced-fish-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-fish-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="fish:fish"/>
       </include>
     </context>
 
-    <context id="fenced-json-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-json-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="json:json"/>
       </include>
     </context>
 
-    <context id="fenced-toml-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-toml-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="toml:toml"/>
       </include>
     </context>
 
-    <context id="fenced-yaml-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-yaml-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="yaml:yaml"/>
       </include>
     </context>
 
-    <context id="fenced-ini-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-ini-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="ini:ini"/>
       </include>
     </context>
 
-    <context id="fenced-xml-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-xml-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="xml:xml"/>
       </include>
     </context>
 
-    <context id="fenced-html-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-html-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="html:html"/>
       </include>
     </context>
 
-    <context id="fenced-css-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-css-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="css:css"/>
       </include>
     </context>
 
-    <context id="fenced-scss-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-scss-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="scss:scss"/>
       </include>
     </context>
 
-    <context id="fenced-c-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-c-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="c:c"/>
       </include>
     </context>
 
-    <context id="fenced-cpp-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-cpp-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="cpp:cpp"/>
       </include>
     </context>
 
-    <context id="fenced-c-sharp-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-c-sharp-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="c-sharp:c-sharp"/>
       </include>
     </context>
 
-    <context id="fenced-go-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-go-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="go:go"/>
       </include>
     </context>
 
-    <context id="fenced-java-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-java-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="java:java"/>
       </include>
     </context>
 
-    <context id="fenced-kotlin-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-kotlin-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="kotlin:kotlin"/>
       </include>
     </context>
 
-    <context id="fenced-swift-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-swift-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="swift:swift"/>
       </include>
     </context>
 
-    <context id="fenced-zig-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-zig-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="zig:zig"/>
       </include>
     </context>
 
-    <context id="fenced-glsl-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-glsl-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="glsl:glsl"/>
       </include>
     </context>
 
-    <context id="fenced-sql-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-sql-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="sql:sql"/>
       </include>
     </context>
 
-    <context id="fenced-diff-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-diff-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="diff:diff"/>
       </include>
     </context>
 
-    <context id="fenced-lua-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-lua-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="lua:lua"/>
       </include>
     </context>
 
-    <context id="fenced-ruby-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-ruby-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="ruby:ruby"/>
       </include>
     </context>
 
-    <context id="fenced-php-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-php-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="php:php"/>
       </include>
     </context>
 
-    <context id="fenced-docker-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-docker-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="docker:docker"/>
       </include>
     </context>
 
-    <context id="fenced-makefile-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-makefile-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="makefile:makefile"/>
       </include>
     </context>
 
-    <context id="fenced-nix-backticks" class="no-spell-check">
-      <start>^[ \t]*`{3,}[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+    <context id="fenced-nix-backticks3" class="no-spell-check">
+      <start>^[ \t]*`{3}(?!`)[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*`{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks3"/>
         <context ref="nix:nix"/>
       </include>
     </context>
 
-    <context id="fenced-rust-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-rust-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="rust:rust"/>
       </include>
     </context>
 
-    <context id="fenced-python3-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-python3-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="python3:python3"/>
       </include>
     </context>
 
-    <context id="fenced-js-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-js-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="js:js"/>
       </include>
     </context>
 
-    <context id="fenced-jsx-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-jsx-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="jsx:jsx"/>
       </include>
     </context>
 
-    <context id="fenced-typescript-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-typescript-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="typescript:typescript"/>
       </include>
     </context>
 
-    <context id="fenced-typescript-jsx-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-typescript-jsx-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="typescript-jsx:typescript-jsx"/>
       </include>
     </context>
 
-    <context id="fenced-sh-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-sh-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="sh:sh"/>
       </include>
     </context>
 
-    <context id="fenced-fish-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-fish-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="fish:fish"/>
       </include>
     </context>
 
-    <context id="fenced-json-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-json-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="json:json"/>
       </include>
     </context>
 
-    <context id="fenced-toml-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-toml-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="toml:toml"/>
       </include>
     </context>
 
-    <context id="fenced-yaml-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-yaml-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="yaml:yaml"/>
       </include>
     </context>
 
-    <context id="fenced-ini-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-ini-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="ini:ini"/>
       </include>
     </context>
 
-    <context id="fenced-xml-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-xml-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="xml:xml"/>
       </include>
     </context>
 
-    <context id="fenced-html-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-html-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="html:html"/>
       </include>
     </context>
 
-    <context id="fenced-css-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-css-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="css:css"/>
       </include>
     </context>
 
-    <context id="fenced-scss-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-scss-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="scss:scss"/>
       </include>
     </context>
 
-    <context id="fenced-c-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-c-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="c:c"/>
       </include>
     </context>
 
-    <context id="fenced-cpp-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-cpp-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="cpp:cpp"/>
       </include>
     </context>
 
-    <context id="fenced-c-sharp-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-c-sharp-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="c-sharp:c-sharp"/>
       </include>
     </context>
 
-    <context id="fenced-go-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-go-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="go:go"/>
       </include>
     </context>
 
-    <context id="fenced-java-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-java-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="java:java"/>
       </include>
     </context>
 
-    <context id="fenced-kotlin-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-kotlin-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="kotlin:kotlin"/>
       </include>
     </context>
 
-    <context id="fenced-swift-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-swift-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="swift:swift"/>
       </include>
     </context>
 
-    <context id="fenced-zig-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-zig-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="zig:zig"/>
       </include>
     </context>
 
-    <context id="fenced-glsl-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-glsl-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="glsl:glsl"/>
       </include>
     </context>
 
-    <context id="fenced-sql-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-sql-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="sql:sql"/>
       </include>
     </context>
 
-    <context id="fenced-diff-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-diff-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="diff:diff"/>
       </include>
     </context>
 
-    <context id="fenced-lua-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-lua-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="lua:lua"/>
       </include>
     </context>
 
-    <context id="fenced-ruby-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-ruby-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="ruby:ruby"/>
       </include>
     </context>
 
-    <context id="fenced-php-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-php-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="php:php"/>
       </include>
     </context>
 
-    <context id="fenced-docker-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-docker-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="docker:docker"/>
       </include>
     </context>
 
-    <context id="fenced-makefile-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-makefile-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="makefile:makefile"/>
       </include>
     </context>
 
-    <context id="fenced-nix-tildes" class="no-spell-check">
-      <start>^[ \t]*~{3,}[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
-      <end>^[ \t]*~{3,}[ \t]*$</end>
+    <context id="fenced-nix-backticks4" class="no-spell-check">
+      <start>^[ \t]*`{4}(?!`)[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-backticks4"/>
         <context ref="nix:nix"/>
       </include>
     </context>
 
-    <context id="fenced-code-backticks" class="no-spell-check" style-ref="code-block">
-      <start>^[ \t]*`{3,}.*$</start>
-      <end>^[ \t]*`{3,}[ \t]*$</end>
+    <context id="fenced-rust-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-backticks"/>
+        <context ref="close-backticks5"/>
+        <context ref="rust:rust"/>
       </include>
     </context>
 
-    <context id="fenced-code-tildes" class="no-spell-check" style-ref="code-block">
-      <start>^[ \t]*~{3,}.*$</start>
+    <context id="fenced-python3-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="python3:python3"/>
+      </include>
+    </context>
+
+    <context id="fenced-js-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="js:js"/>
+      </include>
+    </context>
+
+    <context id="fenced-jsx-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="jsx:jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="typescript:typescript"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-jsx-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="typescript-jsx:typescript-jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-sh-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="sh:sh"/>
+      </include>
+    </context>
+
+    <context id="fenced-fish-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="fish:fish"/>
+      </include>
+    </context>
+
+    <context id="fenced-json-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="json:json"/>
+      </include>
+    </context>
+
+    <context id="fenced-toml-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="toml:toml"/>
+      </include>
+    </context>
+
+    <context id="fenced-yaml-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="yaml:yaml"/>
+      </include>
+    </context>
+
+    <context id="fenced-ini-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="ini:ini"/>
+      </include>
+    </context>
+
+    <context id="fenced-xml-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="xml:xml"/>
+      </include>
+    </context>
+
+    <context id="fenced-html-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="html:html"/>
+      </include>
+    </context>
+
+    <context id="fenced-css-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="css:css"/>
+      </include>
+    </context>
+
+    <context id="fenced-scss-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="scss:scss"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="c:c"/>
+      </include>
+    </context>
+
+    <context id="fenced-cpp-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="cpp:cpp"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-sharp-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="c-sharp:c-sharp"/>
+      </include>
+    </context>
+
+    <context id="fenced-go-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="go:go"/>
+      </include>
+    </context>
+
+    <context id="fenced-java-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="java:java"/>
+      </include>
+    </context>
+
+    <context id="fenced-kotlin-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="kotlin:kotlin"/>
+      </include>
+    </context>
+
+    <context id="fenced-swift-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="swift:swift"/>
+      </include>
+    </context>
+
+    <context id="fenced-zig-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="zig:zig"/>
+      </include>
+    </context>
+
+    <context id="fenced-glsl-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="glsl:glsl"/>
+      </include>
+    </context>
+
+    <context id="fenced-sql-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="sql:sql"/>
+      </include>
+    </context>
+
+    <context id="fenced-diff-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="diff:diff"/>
+      </include>
+    </context>
+
+    <context id="fenced-lua-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="lua:lua"/>
+      </include>
+    </context>
+
+    <context id="fenced-ruby-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="ruby:ruby"/>
+      </include>
+    </context>
+
+    <context id="fenced-php-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="php:php"/>
+      </include>
+    </context>
+
+    <context id="fenced-docker-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="docker:docker"/>
+      </include>
+    </context>
+
+    <context id="fenced-makefile-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="makefile:makefile"/>
+      </include>
+    </context>
+
+    <context id="fenced-nix-backticks5" class="no-spell-check">
+      <start>^[ \t]*`{5,}[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+        <context ref="nix:nix"/>
+      </include>
+    </context>
+
+    <context id="fenced-rust-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
       <end>^[ \t]*~{3,}[ \t]*$</end>
       <include>
         <context sub-pattern="0" where="start" style-ref="code-block"/>
         <context sub-pattern="0" where="end" style-ref="code-block"/>
-        <context ref="close-tildes"/>
+        <context ref="close-tildes3"/>
+        <context ref="rust:rust"/>
+      </include>
+    </context>
+
+    <context id="fenced-python3-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="python3:python3"/>
+      </include>
+    </context>
+
+    <context id="fenced-js-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="js:js"/>
+      </include>
+    </context>
+
+    <context id="fenced-jsx-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="jsx:jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="typescript:typescript"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-jsx-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="typescript-jsx:typescript-jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-sh-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="sh:sh"/>
+      </include>
+    </context>
+
+    <context id="fenced-fish-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="fish:fish"/>
+      </include>
+    </context>
+
+    <context id="fenced-json-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="json:json"/>
+      </include>
+    </context>
+
+    <context id="fenced-toml-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="toml:toml"/>
+      </include>
+    </context>
+
+    <context id="fenced-yaml-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="yaml:yaml"/>
+      </include>
+    </context>
+
+    <context id="fenced-ini-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="ini:ini"/>
+      </include>
+    </context>
+
+    <context id="fenced-xml-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="xml:xml"/>
+      </include>
+    </context>
+
+    <context id="fenced-html-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="html:html"/>
+      </include>
+    </context>
+
+    <context id="fenced-css-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="css:css"/>
+      </include>
+    </context>
+
+    <context id="fenced-scss-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="scss:scss"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="c:c"/>
+      </include>
+    </context>
+
+    <context id="fenced-cpp-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="cpp:cpp"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-sharp-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="c-sharp:c-sharp"/>
+      </include>
+    </context>
+
+    <context id="fenced-go-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="go:go"/>
+      </include>
+    </context>
+
+    <context id="fenced-java-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="java:java"/>
+      </include>
+    </context>
+
+    <context id="fenced-kotlin-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="kotlin:kotlin"/>
+      </include>
+    </context>
+
+    <context id="fenced-swift-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="swift:swift"/>
+      </include>
+    </context>
+
+    <context id="fenced-zig-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="zig:zig"/>
+      </include>
+    </context>
+
+    <context id="fenced-glsl-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="glsl:glsl"/>
+      </include>
+    </context>
+
+    <context id="fenced-sql-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="sql:sql"/>
+      </include>
+    </context>
+
+    <context id="fenced-diff-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="diff:diff"/>
+      </include>
+    </context>
+
+    <context id="fenced-lua-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="lua:lua"/>
+      </include>
+    </context>
+
+    <context id="fenced-ruby-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="ruby:ruby"/>
+      </include>
+    </context>
+
+    <context id="fenced-php-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="php:php"/>
+      </include>
+    </context>
+
+    <context id="fenced-docker-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="docker:docker"/>
+      </include>
+    </context>
+
+    <context id="fenced-makefile-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="makefile:makefile"/>
+      </include>
+    </context>
+
+    <context id="fenced-nix-tildes3" class="no-spell-check">
+      <start>^[ \t]*~{3}(?!~)[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+        <context ref="nix:nix"/>
+      </include>
+    </context>
+
+    <context id="fenced-rust-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="rust:rust"/>
+      </include>
+    </context>
+
+    <context id="fenced-python3-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="python3:python3"/>
+      </include>
+    </context>
+
+    <context id="fenced-js-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="js:js"/>
+      </include>
+    </context>
+
+    <context id="fenced-jsx-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="jsx:jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="typescript:typescript"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-jsx-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="typescript-jsx:typescript-jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-sh-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="sh:sh"/>
+      </include>
+    </context>
+
+    <context id="fenced-fish-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="fish:fish"/>
+      </include>
+    </context>
+
+    <context id="fenced-json-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="json:json"/>
+      </include>
+    </context>
+
+    <context id="fenced-toml-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="toml:toml"/>
+      </include>
+    </context>
+
+    <context id="fenced-yaml-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="yaml:yaml"/>
+      </include>
+    </context>
+
+    <context id="fenced-ini-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="ini:ini"/>
+      </include>
+    </context>
+
+    <context id="fenced-xml-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="xml:xml"/>
+      </include>
+    </context>
+
+    <context id="fenced-html-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="html:html"/>
+      </include>
+    </context>
+
+    <context id="fenced-css-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="css:css"/>
+      </include>
+    </context>
+
+    <context id="fenced-scss-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="scss:scss"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="c:c"/>
+      </include>
+    </context>
+
+    <context id="fenced-cpp-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="cpp:cpp"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-sharp-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="c-sharp:c-sharp"/>
+      </include>
+    </context>
+
+    <context id="fenced-go-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="go:go"/>
+      </include>
+    </context>
+
+    <context id="fenced-java-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="java:java"/>
+      </include>
+    </context>
+
+    <context id="fenced-kotlin-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="kotlin:kotlin"/>
+      </include>
+    </context>
+
+    <context id="fenced-swift-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="swift:swift"/>
+      </include>
+    </context>
+
+    <context id="fenced-zig-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="zig:zig"/>
+      </include>
+    </context>
+
+    <context id="fenced-glsl-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="glsl:glsl"/>
+      </include>
+    </context>
+
+    <context id="fenced-sql-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="sql:sql"/>
+      </include>
+    </context>
+
+    <context id="fenced-diff-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="diff:diff"/>
+      </include>
+    </context>
+
+    <context id="fenced-lua-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="lua:lua"/>
+      </include>
+    </context>
+
+    <context id="fenced-ruby-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="ruby:ruby"/>
+      </include>
+    </context>
+
+    <context id="fenced-php-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="php:php"/>
+      </include>
+    </context>
+
+    <context id="fenced-docker-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="docker:docker"/>
+      </include>
+    </context>
+
+    <context id="fenced-makefile-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="makefile:makefile"/>
+      </include>
+    </context>
+
+    <context id="fenced-nix-tildes4" class="no-spell-check">
+      <start>^[ \t]*~{4}(?!~)[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+        <context ref="nix:nix"/>
+      </include>
+    </context>
+
+    <context id="fenced-rust-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:rust|rs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="rust:rust"/>
+      </include>
+    </context>
+
+    <context id="fenced-python3-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:python|py|python3|py3)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="python3:python3"/>
+      </include>
+    </context>
+
+    <context id="fenced-js-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:javascript|js|mjs|cjs|node)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="js:js"/>
+      </include>
+    </context>
+
+    <context id="fenced-jsx-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:jsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="jsx:jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:typescript|ts|mts|cts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="typescript:typescript"/>
+      </include>
+    </context>
+
+    <context id="fenced-typescript-jsx-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:tsx)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="typescript-jsx:typescript-jsx"/>
+      </include>
+    </context>
+
+    <context id="fenced-sh-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:sh|bash|shell|zsh|ksh|shellscript)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="sh:sh"/>
+      </include>
+    </context>
+
+    <context id="fenced-fish-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:fish)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="fish:fish"/>
+      </include>
+    </context>
+
+    <context id="fenced-json-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:json|jsonc|json5)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="json:json"/>
+      </include>
+    </context>
+
+    <context id="fenced-toml-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:toml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="toml:toml"/>
+      </include>
+    </context>
+
+    <context id="fenced-yaml-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:yaml|yml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="yaml:yaml"/>
+      </include>
+    </context>
+
+    <context id="fenced-ini-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:ini|cfg|conf|systemd)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="ini:ini"/>
+      </include>
+    </context>
+
+    <context id="fenced-xml-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:xml|svg|xsd|plist)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="xml:xml"/>
+      </include>
+    </context>
+
+    <context id="fenced-html-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:html|htm|xhtml)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="html:html"/>
+      </include>
+    </context>
+
+    <context id="fenced-css-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:css)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="css:css"/>
+      </include>
+    </context>
+
+    <context id="fenced-scss-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:scss|sass)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="scss:scss"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:c|h)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="c:c"/>
+      </include>
+    </context>
+
+    <context id="fenced-cpp-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:cpp|c\+\+|cc|cxx|hpp|hh)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="cpp:cpp"/>
+      </include>
+    </context>
+
+    <context id="fenced-c-sharp-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:csharp|c\#|cs)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="c-sharp:c-sharp"/>
+      </include>
+    </context>
+
+    <context id="fenced-go-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:go|golang)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="go:go"/>
+      </include>
+    </context>
+
+    <context id="fenced-java-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:java)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="java:java"/>
+      </include>
+    </context>
+
+    <context id="fenced-kotlin-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:kotlin|kt|kts)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="kotlin:kotlin"/>
+      </include>
+    </context>
+
+    <context id="fenced-swift-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:swift)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="swift:swift"/>
+      </include>
+    </context>
+
+    <context id="fenced-zig-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:zig)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="zig:zig"/>
+      </include>
+    </context>
+
+    <context id="fenced-glsl-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:glsl|vert|frag|shader)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="glsl:glsl"/>
+      </include>
+    </context>
+
+    <context id="fenced-sql-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:sql|mysql|postgresql|postgres|psql|sqlite|plsql)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="sql:sql"/>
+      </include>
+    </context>
+
+    <context id="fenced-diff-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:diff|patch)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="diff:diff"/>
+      </include>
+    </context>
+
+    <context id="fenced-lua-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:lua)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="lua:lua"/>
+      </include>
+    </context>
+
+    <context id="fenced-ruby-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:ruby|rb)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="ruby:ruby"/>
+      </include>
+    </context>
+
+    <context id="fenced-php-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:php)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="php:php"/>
+      </include>
+    </context>
+
+    <context id="fenced-docker-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:dockerfile|docker|containerfile)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="docker:docker"/>
+      </include>
+    </context>
+
+    <context id="fenced-makefile-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:makefile|make|mk)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="makefile:makefile"/>
+      </include>
+    </context>
+
+    <context id="fenced-nix-tildes5" class="no-spell-check">
+      <start>^[ \t]*~{5,}[ \t]*\{?\.?(?i:nix)(?=[ \t,{}]|$).*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
+        <context ref="nix:nix"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-backticks3" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*`{3}(?!`).*$</start>
+      <end>^[ \t]*`{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks3"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-backticks4" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*`{4}(?!`).*$</start>
+      <end>^[ \t]*`{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks4"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-backticks5" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*`{5,}.*$</start>
+      <end>^[ \t]*`{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-backticks5"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-tildes3" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*~{3}(?!~).*$</start>
+      <end>^[ \t]*~{3,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes3"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-tildes4" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*~{4}(?!~).*$</start>
+      <end>^[ \t]*~{4,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes4"/>
+      </include>
+    </context>
+
+    <context id="fenced-code-tildes5" class="no-spell-check" style-ref="code-block">
+      <start>^[ \t]*~{5,}.*$</start>
+      <end>^[ \t]*~{5,}[ \t]*$</end>
+      <include>
+        <context sub-pattern="0" where="start" style-ref="code-block"/>
+        <context sub-pattern="0" where="end" style-ref="code-block"/>
+        <context ref="close-tildes5"/>
       </include>
     </context>
 
     <context id="nib-markdown">
       <include>
-        <context ref="fenced-rust-backticks"/>
-        <context ref="fenced-python3-backticks"/>
-        <context ref="fenced-js-backticks"/>
-        <context ref="fenced-jsx-backticks"/>
-        <context ref="fenced-typescript-backticks"/>
-        <context ref="fenced-typescript-jsx-backticks"/>
-        <context ref="fenced-sh-backticks"/>
-        <context ref="fenced-fish-backticks"/>
-        <context ref="fenced-json-backticks"/>
-        <context ref="fenced-toml-backticks"/>
-        <context ref="fenced-yaml-backticks"/>
-        <context ref="fenced-ini-backticks"/>
-        <context ref="fenced-xml-backticks"/>
-        <context ref="fenced-html-backticks"/>
-        <context ref="fenced-css-backticks"/>
-        <context ref="fenced-scss-backticks"/>
-        <context ref="fenced-c-backticks"/>
-        <context ref="fenced-cpp-backticks"/>
-        <context ref="fenced-c-sharp-backticks"/>
-        <context ref="fenced-go-backticks"/>
-        <context ref="fenced-java-backticks"/>
-        <context ref="fenced-kotlin-backticks"/>
-        <context ref="fenced-swift-backticks"/>
-        <context ref="fenced-zig-backticks"/>
-        <context ref="fenced-glsl-backticks"/>
-        <context ref="fenced-sql-backticks"/>
-        <context ref="fenced-diff-backticks"/>
-        <context ref="fenced-lua-backticks"/>
-        <context ref="fenced-ruby-backticks"/>
-        <context ref="fenced-php-backticks"/>
-        <context ref="fenced-docker-backticks"/>
-        <context ref="fenced-makefile-backticks"/>
-        <context ref="fenced-nix-backticks"/>
-        <context ref="fenced-rust-tildes"/>
-        <context ref="fenced-python3-tildes"/>
-        <context ref="fenced-js-tildes"/>
-        <context ref="fenced-jsx-tildes"/>
-        <context ref="fenced-typescript-tildes"/>
-        <context ref="fenced-typescript-jsx-tildes"/>
-        <context ref="fenced-sh-tildes"/>
-        <context ref="fenced-fish-tildes"/>
-        <context ref="fenced-json-tildes"/>
-        <context ref="fenced-toml-tildes"/>
-        <context ref="fenced-yaml-tildes"/>
-        <context ref="fenced-ini-tildes"/>
-        <context ref="fenced-xml-tildes"/>
-        <context ref="fenced-html-tildes"/>
-        <context ref="fenced-css-tildes"/>
-        <context ref="fenced-scss-tildes"/>
-        <context ref="fenced-c-tildes"/>
-        <context ref="fenced-cpp-tildes"/>
-        <context ref="fenced-c-sharp-tildes"/>
-        <context ref="fenced-go-tildes"/>
-        <context ref="fenced-java-tildes"/>
-        <context ref="fenced-kotlin-tildes"/>
-        <context ref="fenced-swift-tildes"/>
-        <context ref="fenced-zig-tildes"/>
-        <context ref="fenced-glsl-tildes"/>
-        <context ref="fenced-sql-tildes"/>
-        <context ref="fenced-diff-tildes"/>
-        <context ref="fenced-lua-tildes"/>
-        <context ref="fenced-ruby-tildes"/>
-        <context ref="fenced-php-tildes"/>
-        <context ref="fenced-docker-tildes"/>
-        <context ref="fenced-makefile-tildes"/>
-        <context ref="fenced-nix-tildes"/>
-        <context ref="fenced-code-backticks"/>
-        <context ref="fenced-code-tildes"/>
+        <context ref="fenced-rust-backticks3"/>
+        <context ref="fenced-python3-backticks3"/>
+        <context ref="fenced-js-backticks3"/>
+        <context ref="fenced-jsx-backticks3"/>
+        <context ref="fenced-typescript-backticks3"/>
+        <context ref="fenced-typescript-jsx-backticks3"/>
+        <context ref="fenced-sh-backticks3"/>
+        <context ref="fenced-fish-backticks3"/>
+        <context ref="fenced-json-backticks3"/>
+        <context ref="fenced-toml-backticks3"/>
+        <context ref="fenced-yaml-backticks3"/>
+        <context ref="fenced-ini-backticks3"/>
+        <context ref="fenced-xml-backticks3"/>
+        <context ref="fenced-html-backticks3"/>
+        <context ref="fenced-css-backticks3"/>
+        <context ref="fenced-scss-backticks3"/>
+        <context ref="fenced-c-backticks3"/>
+        <context ref="fenced-cpp-backticks3"/>
+        <context ref="fenced-c-sharp-backticks3"/>
+        <context ref="fenced-go-backticks3"/>
+        <context ref="fenced-java-backticks3"/>
+        <context ref="fenced-kotlin-backticks3"/>
+        <context ref="fenced-swift-backticks3"/>
+        <context ref="fenced-zig-backticks3"/>
+        <context ref="fenced-glsl-backticks3"/>
+        <context ref="fenced-sql-backticks3"/>
+        <context ref="fenced-diff-backticks3"/>
+        <context ref="fenced-lua-backticks3"/>
+        <context ref="fenced-ruby-backticks3"/>
+        <context ref="fenced-php-backticks3"/>
+        <context ref="fenced-docker-backticks3"/>
+        <context ref="fenced-makefile-backticks3"/>
+        <context ref="fenced-nix-backticks3"/>
+        <context ref="fenced-rust-backticks4"/>
+        <context ref="fenced-python3-backticks4"/>
+        <context ref="fenced-js-backticks4"/>
+        <context ref="fenced-jsx-backticks4"/>
+        <context ref="fenced-typescript-backticks4"/>
+        <context ref="fenced-typescript-jsx-backticks4"/>
+        <context ref="fenced-sh-backticks4"/>
+        <context ref="fenced-fish-backticks4"/>
+        <context ref="fenced-json-backticks4"/>
+        <context ref="fenced-toml-backticks4"/>
+        <context ref="fenced-yaml-backticks4"/>
+        <context ref="fenced-ini-backticks4"/>
+        <context ref="fenced-xml-backticks4"/>
+        <context ref="fenced-html-backticks4"/>
+        <context ref="fenced-css-backticks4"/>
+        <context ref="fenced-scss-backticks4"/>
+        <context ref="fenced-c-backticks4"/>
+        <context ref="fenced-cpp-backticks4"/>
+        <context ref="fenced-c-sharp-backticks4"/>
+        <context ref="fenced-go-backticks4"/>
+        <context ref="fenced-java-backticks4"/>
+        <context ref="fenced-kotlin-backticks4"/>
+        <context ref="fenced-swift-backticks4"/>
+        <context ref="fenced-zig-backticks4"/>
+        <context ref="fenced-glsl-backticks4"/>
+        <context ref="fenced-sql-backticks4"/>
+        <context ref="fenced-diff-backticks4"/>
+        <context ref="fenced-lua-backticks4"/>
+        <context ref="fenced-ruby-backticks4"/>
+        <context ref="fenced-php-backticks4"/>
+        <context ref="fenced-docker-backticks4"/>
+        <context ref="fenced-makefile-backticks4"/>
+        <context ref="fenced-nix-backticks4"/>
+        <context ref="fenced-rust-backticks5"/>
+        <context ref="fenced-python3-backticks5"/>
+        <context ref="fenced-js-backticks5"/>
+        <context ref="fenced-jsx-backticks5"/>
+        <context ref="fenced-typescript-backticks5"/>
+        <context ref="fenced-typescript-jsx-backticks5"/>
+        <context ref="fenced-sh-backticks5"/>
+        <context ref="fenced-fish-backticks5"/>
+        <context ref="fenced-json-backticks5"/>
+        <context ref="fenced-toml-backticks5"/>
+        <context ref="fenced-yaml-backticks5"/>
+        <context ref="fenced-ini-backticks5"/>
+        <context ref="fenced-xml-backticks5"/>
+        <context ref="fenced-html-backticks5"/>
+        <context ref="fenced-css-backticks5"/>
+        <context ref="fenced-scss-backticks5"/>
+        <context ref="fenced-c-backticks5"/>
+        <context ref="fenced-cpp-backticks5"/>
+        <context ref="fenced-c-sharp-backticks5"/>
+        <context ref="fenced-go-backticks5"/>
+        <context ref="fenced-java-backticks5"/>
+        <context ref="fenced-kotlin-backticks5"/>
+        <context ref="fenced-swift-backticks5"/>
+        <context ref="fenced-zig-backticks5"/>
+        <context ref="fenced-glsl-backticks5"/>
+        <context ref="fenced-sql-backticks5"/>
+        <context ref="fenced-diff-backticks5"/>
+        <context ref="fenced-lua-backticks5"/>
+        <context ref="fenced-ruby-backticks5"/>
+        <context ref="fenced-php-backticks5"/>
+        <context ref="fenced-docker-backticks5"/>
+        <context ref="fenced-makefile-backticks5"/>
+        <context ref="fenced-nix-backticks5"/>
+        <context ref="fenced-rust-tildes3"/>
+        <context ref="fenced-python3-tildes3"/>
+        <context ref="fenced-js-tildes3"/>
+        <context ref="fenced-jsx-tildes3"/>
+        <context ref="fenced-typescript-tildes3"/>
+        <context ref="fenced-typescript-jsx-tildes3"/>
+        <context ref="fenced-sh-tildes3"/>
+        <context ref="fenced-fish-tildes3"/>
+        <context ref="fenced-json-tildes3"/>
+        <context ref="fenced-toml-tildes3"/>
+        <context ref="fenced-yaml-tildes3"/>
+        <context ref="fenced-ini-tildes3"/>
+        <context ref="fenced-xml-tildes3"/>
+        <context ref="fenced-html-tildes3"/>
+        <context ref="fenced-css-tildes3"/>
+        <context ref="fenced-scss-tildes3"/>
+        <context ref="fenced-c-tildes3"/>
+        <context ref="fenced-cpp-tildes3"/>
+        <context ref="fenced-c-sharp-tildes3"/>
+        <context ref="fenced-go-tildes3"/>
+        <context ref="fenced-java-tildes3"/>
+        <context ref="fenced-kotlin-tildes3"/>
+        <context ref="fenced-swift-tildes3"/>
+        <context ref="fenced-zig-tildes3"/>
+        <context ref="fenced-glsl-tildes3"/>
+        <context ref="fenced-sql-tildes3"/>
+        <context ref="fenced-diff-tildes3"/>
+        <context ref="fenced-lua-tildes3"/>
+        <context ref="fenced-ruby-tildes3"/>
+        <context ref="fenced-php-tildes3"/>
+        <context ref="fenced-docker-tildes3"/>
+        <context ref="fenced-makefile-tildes3"/>
+        <context ref="fenced-nix-tildes3"/>
+        <context ref="fenced-rust-tildes4"/>
+        <context ref="fenced-python3-tildes4"/>
+        <context ref="fenced-js-tildes4"/>
+        <context ref="fenced-jsx-tildes4"/>
+        <context ref="fenced-typescript-tildes4"/>
+        <context ref="fenced-typescript-jsx-tildes4"/>
+        <context ref="fenced-sh-tildes4"/>
+        <context ref="fenced-fish-tildes4"/>
+        <context ref="fenced-json-tildes4"/>
+        <context ref="fenced-toml-tildes4"/>
+        <context ref="fenced-yaml-tildes4"/>
+        <context ref="fenced-ini-tildes4"/>
+        <context ref="fenced-xml-tildes4"/>
+        <context ref="fenced-html-tildes4"/>
+        <context ref="fenced-css-tildes4"/>
+        <context ref="fenced-scss-tildes4"/>
+        <context ref="fenced-c-tildes4"/>
+        <context ref="fenced-cpp-tildes4"/>
+        <context ref="fenced-c-sharp-tildes4"/>
+        <context ref="fenced-go-tildes4"/>
+        <context ref="fenced-java-tildes4"/>
+        <context ref="fenced-kotlin-tildes4"/>
+        <context ref="fenced-swift-tildes4"/>
+        <context ref="fenced-zig-tildes4"/>
+        <context ref="fenced-glsl-tildes4"/>
+        <context ref="fenced-sql-tildes4"/>
+        <context ref="fenced-diff-tildes4"/>
+        <context ref="fenced-lua-tildes4"/>
+        <context ref="fenced-ruby-tildes4"/>
+        <context ref="fenced-php-tildes4"/>
+        <context ref="fenced-docker-tildes4"/>
+        <context ref="fenced-makefile-tildes4"/>
+        <context ref="fenced-nix-tildes4"/>
+        <context ref="fenced-rust-tildes5"/>
+        <context ref="fenced-python3-tildes5"/>
+        <context ref="fenced-js-tildes5"/>
+        <context ref="fenced-jsx-tildes5"/>
+        <context ref="fenced-typescript-tildes5"/>
+        <context ref="fenced-typescript-jsx-tildes5"/>
+        <context ref="fenced-sh-tildes5"/>
+        <context ref="fenced-fish-tildes5"/>
+        <context ref="fenced-json-tildes5"/>
+        <context ref="fenced-toml-tildes5"/>
+        <context ref="fenced-yaml-tildes5"/>
+        <context ref="fenced-ini-tildes5"/>
+        <context ref="fenced-xml-tildes5"/>
+        <context ref="fenced-html-tildes5"/>
+        <context ref="fenced-css-tildes5"/>
+        <context ref="fenced-scss-tildes5"/>
+        <context ref="fenced-c-tildes5"/>
+        <context ref="fenced-cpp-tildes5"/>
+        <context ref="fenced-c-sharp-tildes5"/>
+        <context ref="fenced-go-tildes5"/>
+        <context ref="fenced-java-tildes5"/>
+        <context ref="fenced-kotlin-tildes5"/>
+        <context ref="fenced-swift-tildes5"/>
+        <context ref="fenced-zig-tildes5"/>
+        <context ref="fenced-glsl-tildes5"/>
+        <context ref="fenced-sql-tildes5"/>
+        <context ref="fenced-diff-tildes5"/>
+        <context ref="fenced-lua-tildes5"/>
+        <context ref="fenced-ruby-tildes5"/>
+        <context ref="fenced-php-tildes5"/>
+        <context ref="fenced-docker-tildes5"/>
+        <context ref="fenced-makefile-tildes5"/>
+        <context ref="fenced-nix-tildes5"/>
+        <context ref="fenced-code-backticks3"/>
+        <context ref="fenced-code-backticks4"/>
+        <context ref="fenced-code-backticks5"/>
+        <context ref="fenced-code-tildes3"/>
+        <context ref="fenced-code-tildes4"/>
+        <context ref="fenced-code-tildes5"/>
         <context ref="markdown:markdown"/>
       </include>
     </context>

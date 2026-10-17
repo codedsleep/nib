@@ -53,20 +53,30 @@ LANGUAGES = [
 ]
 
 # A fence is three or more backticks or tildes, indented or not (fences sit
-# inside list items). It closes on a line of the same character; a longer
-# outer fence around a shorter inner one is not tracked.
-FENCES = [('backticks', '`'), ('tildes', '~')]
+# inside list items). It closes on a line of the same character at least as
+# long, so ````md can show a ``` block inside it. The closer cannot refer back
+# to the opening line (see closer()), so each opening length gets its own
+# contexts: exactly 3, exactly 4, and 5 or more (a 6-long fence holding a
+# 5-long line is the one case not tracked).
+FENCE_CHARS = [('backticks', '`'), ('tildes', '~')]
+FENCE_LENGTHS = [3, 4, 5]
+FENCES = [
+    (f'{kind}{length}', char, length, length == FENCE_LENGTHS[-1])
+    for kind, char in FENCE_CHARS
+    for length in FENCE_LENGTHS
+]
 # The name ends at the end of the line, a space, a comma or a brace, so
 # `rust,ignore` and `{.rust}` work but `rusty` is not Rust.
 NAME_END = r'(?=[ \t,{}]|$)'
 
 
-def fence_line(char):
-    return rf'^[ \t]*{char}{{3,}}'
+def open_line(char, length, longer):
+    run = rf'{char}{{{length},}}' if longer else rf'{char}{{{length}}}(?!{char})'
+    return rf'^[ \t]*{run}'
 
 
-def close_line(char):
-    return escape(rf'{fence_line(char)}[ \t]*$')
+def close_line(char, length):
+    return escape(rf'^[ \t]*{char}{{{length},}}[ \t]*$')
 
 
 HEADER = '''<?xml version="1.0" encoding="UTF-8"?>
@@ -93,22 +103,23 @@ def escape(text):
     return text.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
 
-def closer(kind, char):
+def closer(kind, char, length):
     # A child that ends its block. The block's own <end> loses to a child
     # starting at the same place (sh backticks, Python's ~ operator); a
     # child listed first does not.
     return '\n'.join([
         f'    <context id="close-{kind}" style-ref="code-block" end-parent="true">',
-        f'      <match>{close_line(char)}</match>',
+        f'      <match>{close_line(char, length)}</match>',
         '    </context>',
     ])
 
 
-def fence(context_id, kind, char, info, style, inner):
+def fence(context_id, fence_kind, info, style, inner):
+    kind, char, length, longer = fence_kind
     lines = [
         f'    <context id="{context_id}-{kind}" class="no-spell-check"{style}>',
-        f'      <start>{escape(fence_line(char) + info)}</start>',
-        f'      <end>{close_line(char)}</end>',
+        f'      <start>{escape(open_line(char, length, longer) + info)}</start>',
+        f'      <end>{close_line(char, length)}</end>',
         '      <include>',
         '        <context sub-pattern="0" where="start" style-ref="code-block"/>',
         '        <context sub-pattern="0" where="end" style-ref="code-block"/>',
@@ -120,19 +131,20 @@ def fence(context_id, kind, char, info, style, inner):
 
 
 def generate():
-    blocks = [closer(kind, char) for kind, char in FENCES]
+    blocks = [closer(kind, char, length) for kind, char, length, _ in FENCES]
     refs = []
-    for kind, char in FENCES:
+    for fence_kind in FENCES:
+        kind = fence_kind[0]
         for lang, names in LANGUAGES:
             alternatives = '|'.join(re.escape(n).replace('\\-', '-') for n in names)
             info = rf'[ \t]*\{{?\.?(?i:{alternatives}){NAME_END}.*$'
             inner = [f'<context ref="{lang}:{lang}"/>']
-            blocks.append(fence(f'fenced-{lang}', kind, char, info, '', inner))
+            blocks.append(fence(f'fenced-{lang}', fence_kind, info, '', inner))
             refs.append(f'fenced-{lang}-{kind}')
     # Unknown or missing names: one colour, as GtkSourceView's Markdown does.
-    for kind, char in FENCES:
-        blocks.append(fence('fenced-code', kind, char, '.*$', ' style-ref="code-block"', []))
-        refs.append(f'fenced-code-{kind}')
+    for fence_kind in FENCES:
+        blocks.append(fence('fenced-code', fence_kind, '.*$', ' style-ref="code-block"', []))
+        refs.append(f'fenced-code-{fence_kind[0]}')
     top = '\n'.join([
         '    <context id="nib-markdown">',
         '      <include>',
