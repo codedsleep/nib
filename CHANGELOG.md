@@ -2,6 +2,12 @@
 
 All notable changes to nib are documented here, following Keep a Changelog.
 
+## [Unreleased]
+
+### Added
+
+- Source view highlights fenced code in the language its fence names (Rust, Python, TypeScript, shell and about 30 more); unnamed or unknown fences keep one colour.
+
 ## [0.1.0] - 2026-10-16
 
 ### Added

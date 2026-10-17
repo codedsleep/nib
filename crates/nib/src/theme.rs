@@ -1,5 +1,5 @@
 //! The desktop's GTK theme (D15), nib's stylesheet, the editor fonts and
-//! the style-scheme search path.
+//! the style-scheme and language search paths.
 //!
 //! A theme with a GTK 4 stylesheet loads by itself. A GTK 3-only theme, such
 //! as the owner's `NordArc`, would leave GTK 4 grey: its palette recolours
@@ -48,8 +48,20 @@ pub fn install() {
         );
     }
     let manager = sourceview5::StyleSchemeManager::default();
-    for dir in scheme_dirs() {
+    for dir in data_dirs(
+        &["data/style-schemes", "share/nib/style-schemes"],
+        "nib-nord.xml",
+    ) {
         manager.append_search_path(&dir.to_string_lossy());
+    }
+    // First, so a build's own nib-markdown.lang wins over an installed one.
+    let languages = sourceview5::LanguageManager::default();
+    let rels = [
+        "data/language-specs",
+        "share/gtksourceview-5/language-specs",
+    ];
+    for dir in data_dirs(&rels, "nib-markdown.lang").iter().rev() {
+        languages.prepend_search_path(&dir.to_string_lossy());
     }
 }
 
@@ -118,16 +130,17 @@ fn follow_desktop(display: &gtk::gdk::Display) {
     );
 }
 
-/// Style schemes beside a source build or an installed binary.
-fn scheme_dirs() -> Vec<PathBuf> {
+/// Directories holding `file` beside a source build or an installed binary,
+/// nearest first.
+fn data_dirs(rels: &[&str], file: &str) -> Vec<PathBuf> {
     let Ok(exe) = std::env::current_exe() else {
         return vec![];
     };
     let mut dirs = vec![];
     for up in exe.ancestors().skip(1).take(4) {
-        for rel in ["data/style-schemes", "share/nib/style-schemes"] {
+        for rel in rels {
             let dir = up.join(rel);
-            if dir.join("nib-nord.xml").is_file() {
+            if dir.join(file).is_file() {
                 dirs.push(dir);
             }
         }

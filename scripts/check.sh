@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 export RUSTFMT="${RUSTFMT:-/usr/bin/rustfmt}"
 export NIB_ALLOW_ROOTS=
 python3 scripts/generate-docs.py --check
+python3 scripts/generate-markdown-lang.py --check
 bash -n install.sh scripts/install*.sh scripts/package.sh scripts/test-install.sh
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings

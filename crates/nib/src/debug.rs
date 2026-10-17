@@ -216,12 +216,14 @@ pub fn dump(app: &Rc<App>) -> String {
     let active = app.tabs.active_index();
     let tab_json = tabs.iter().enumerate().map(|(i, t)| {
         format!(
-            "{{\"title\":{},\"path\":{},\"modified\":{},\"active\":{},\"read_only\":{}}}",
+            "{{\"title\":{},\"path\":{},\"modified\":{},\"active\":{},\"read_only\":{},\"language\":{}}}",
             json(&t.title(app)),
             json(&t.display_path(app)),
             t.buffer.is_modified(),
             i == active,
             t.read_only.get(),
+            sourceview5::prelude::BufferExt::language(&t.buffer)
+                .map_or_else(|| "null".into(), |l| json(&l.id())),
         )
     });
     let tab = app.tabs.current();

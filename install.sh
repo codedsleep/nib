@@ -23,7 +23,8 @@ if ((uninstall)); then
     # Kept identical to scripts/install-files.sh so uninstall needs no download.
     for file in bin/nib share/applications/io.github.codedsleep.Nib.desktop \
         share/icons/hicolor/scalable/apps/io.github.codedsleep.Nib.svg share/man/man1/nib.1 \
-        share/gtksourceview-5/styles/nib-nord.xml share/gtksourceview-5/styles/nib-light.xml; do
+        share/gtksourceview-5/styles/nib-nord.xml share/gtksourceview-5/styles/nib-light.xml \
+        share/gtksourceview-5/language-specs/nib-markdown.lang; do
         rm -f -- "$prefix/$file"
     done
     if [[ -d $prefix/share/applications ]]; then
@@ -35,7 +36,7 @@ if ((uninstall)); then
     if [[ -d $prefix/share/icons/hicolor && -z $(find "$prefix/share/icons/hicolor" ! -type d ! -name icon-theme.cache -print -quit) ]]; then
         rm -f -- "$prefix/share/icons/hicolor/icon-theme.cache"
     fi
-    for dir in share/icons/hicolor/scalable/apps share/icons/hicolor/scalable share/icons/hicolor share/icons share/applications share/man/man1 share/man share/gtksourceview-5/styles share/gtksourceview-5 share bin; do
+    for dir in share/icons/hicolor/scalable/apps share/icons/hicolor/scalable share/icons/hicolor share/icons share/applications share/man/man1 share/man share/gtksourceview-5/styles share/gtksourceview-5/language-specs share/gtksourceview-5 share bin; do
         rmdir -- "$prefix/$dir" 2>/dev/null || true
     done
     rmdir -- "$prefix" 2>/dev/null || true

@@ -62,16 +62,26 @@ thread_local! {
     /// frame and gets highlighting in the post-present idle.
     static MARKDOWN: std::cell::OnceCell<Option<sourceview5::Language>> =
         const { std::cell::OnceCell::new() };
+    /// nib's Markdown, which highlights fenced code in its own language
+    /// (`data/language-specs`). Parsing the embedded languages costs ≈ 100 ms
+    /// once, so it loads only when a note first names a fence's language.
+    static CODE: std::cell::OnceCell<Option<sourceview5::Language>> =
+        const { std::cell::OnceCell::new() };
+}
+
+/// The language a new tab gets: whichever Markdown is loaded, nib's first.
+fn current_language() -> Option<sourceview5::Language> {
+    CODE.with(|c| c.get().cloned().flatten())
+        .or_else(|| MARKDOWN.with(|m| m.get().cloned().flatten()))
 }
 
 /// Load the Markdown language and give it to every open tab.
 pub fn load_language(app: &App) {
     let started = Instant::now();
-    let lang = MARKDOWN.with(|m| {
-        m.get_or_init(|| sourceview5::LanguageManager::default().language("markdown"))
-            .clone()
+    MARKDOWN.with(|m| {
+        m.get_or_init(|| sourceview5::LanguageManager::default().language("markdown"));
     });
-    if let Some(lang) = lang {
+    if let Some(lang) = current_language() {
         for tab in app.tabs.all() {
             if tab.buffer.language().is_none() {
                 tab.buffer.set_language(Some(&lang));
@@ -79,6 +89,27 @@ pub fn load_language(app: &App) {
         }
     }
     debug::trace_ms("language", started);
+}
+
+/// Switch every Markdown tab to nib's code-highlighting Markdown, the first
+/// time a note's text names a fenced block's language.
+fn load_code_language(app: &App, text: &str) {
+    if CODE.with(|c| c.get().is_some()) || !nib_core::edit::has_named_fence(text) {
+        return;
+    }
+    let started = Instant::now();
+    let manager = sourceview5::LanguageManager::default();
+    let lang = CODE.with(|c| c.get_or_init(|| manager.language("nib-markdown")).clone());
+    let Some(lang) = lang else {
+        log::warn!("nib-markdown.lang not found; fenced code stays one colour");
+        return;
+    };
+    for tab in app.tabs.all() {
+        if tab.buffer.language().is_some_and(|l| l.id() == "markdown") {
+            tab.buffer.set_language(Some(&lang));
+        }
+    }
+    debug::trace_ms("code_language", started);
 }
 
 pub struct Tab {
@@ -135,7 +166,7 @@ impl Tab {
     pub fn new(app: &Rc<App>, id: u64) -> Rc<Self> {
         let config = app.config.borrow();
         let buffer = sourceview5::Buffer::new(None);
-        if let Some(Some(lang)) = MARKDOWN.with(|m| m.get().cloned()) {
+        if let Some(lang) = current_language() {
             buffer.set_language(Some(&lang));
         }
         buffer.set_highlight_matching_brackets(false);
@@ -427,9 +458,11 @@ impl Tab {
             .set_position(iter.line() + 1, iter.line_offset() + 1);
     }
 
-    /// Work done 300 ms after the last edit: word count and outline.
+    /// Work done 300 ms after the last edit: word count, outline and, once,
+    /// the code-highlighting language.
     pub fn idle_update(&self, app: &Rc<App>) {
         let text = self.text();
+        load_code_language(app, &text);
         let words = nib_core::edit::word_count(&text);
         self.word_count.set(Some(words));
         if app.tabs.is_current_id(self.id) {
