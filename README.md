@@ -7,7 +7,7 @@ follow wikilinks, and find notes without leaving the keyboard.
 - Trek-style files column with selection, copy/cut/paste, XDG trash and link-aware renames.
 - Wikilink and tag completion, backlinks, outline, fuzzy switcher and streamed vault search.
 - Source, reading and split views; local images, callouts, task toggles and note embeds.
-- Fenced code highlighted in the language its fence names (```` ```rust ````, `~~~python`) in source view.
+- Fenced code highlighted in the language its fence names (```` ```rust ````, `~~~python`) in source and reading views.
 - Daily notes, templates, pasted screenshots, file attachments, tabs and per-vault sessions.
 - Atomic saves that retain BOM and line endings, read-only previews for non-UTF-8 files,
   and external-change notices that protect modified buffers.
