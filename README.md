@@ -2,7 +2,7 @@
 
 **Elevator pitch:** A keyboard-first Markdown notes app for Linux, in Rust, GTK 4 and GtkSourceView 5 — open an Obsidian vault as it is, write with vim motions, follow `[[wikilinks]]`, and find any note without leaving the keyboard.
 
-![nib: the files column, a note's Markdown source with highlighted Rust, and the same note in the reading view beside it](assets/nib-split.png)
+![nib: the files column, a TypeScript note with highlighted fenced code, and the Backlinks/Outline panel](assets/nib-split.png)
 
 ## Features
 
