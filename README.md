@@ -38,6 +38,7 @@ At run time it wants GTK 4 and GtkSourceView 5:
 ```sh
 sudo dnf install gtk4 gtksourceview5                  # Fedora
 sudo apt install libgtk-4-1 libgtksourceview-5-0      # Ubuntu, Debian
+sudo pacman -S gtk4 gtksourceview5                    # Arch
 ```
 
 ### From source
