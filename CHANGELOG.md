@@ -2,6 +2,12 @@
 
 All notable changes to nib are documented here, following Keep a Changelog.
 
+## [Unreleased]
+
+### Changed
+
+- `install.sh` downloads public releases with curl and can be piped into bash; the GitHub CLI is no longer needed.
+
 ## [0.2.1] - 2026-10-17
 
 ### Added

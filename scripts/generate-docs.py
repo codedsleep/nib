@@ -27,6 +27,13 @@ def display(scope, key):
     return key
 
 
+def table(rows):
+    """Markdown table with padded columns, as Prettier formats it."""
+    widths = [max(3, *(len(row[i]) for row in rows)) for i in range(len(rows[0]))]
+    line = lambda cells: '| ' + ' | '.join(c.ljust(w) for c, w in zip(cells, widths)) + ' |'
+    return [line(rows[0]), line(['-' * w for w in widths])] + [line(row) for row in rows[1:]]
+
+
 def generate():
     source = (ROOT / 'crates/nib/src/registry.rs').read_text()
     source = source.split('pub static ENTRIES: &[Entry] = &[', 1)[1].split('\n];', 1)[0]
@@ -36,7 +43,8 @@ def generate():
     markdown = []
     scdoc = []
     for title, scopes in [('Window and editor', 'WE'), ('Files column', 'F'), ('Commands and palette', 'C')]:
-        markdown += [f'### {title}', '', '| Keys | Commands | Action |', '|---|---|---|']
+        markdown += [f'### {title}', '']
+        rows = [['Keys', 'Commands', 'Action']]
         scdoc += [f'## {title.upper()}', '']
         for match in entries:
             _, label, scope, keys, commands = match.groups()
@@ -46,11 +54,11 @@ def generate():
             commands = [':' + command for command in strings(commands)]
             label = label[1:-1]
             code = lambda values: ', '.join('`' + v.replace('|', '\\|') + '`' for v in values) or '—'
-            markdown.append(f'| {code(keys)} | {code(commands)} | {label} |')
+            rows.append([code(keys), code(commands), label])
             binding = ', '.join(keys + commands) or 'Palette'
             # scdoc treats punctuation at the start of a line specially.
             scdoc += ['*' + binding.replace('\\', '\\\\').replace('*', '\\*') + '*', '\t' + label, '']
-        markdown.append('')
+        markdown += table(rows) + ['']
     return '\n'.join(markdown), '\n'.join(scdoc)
 
 
