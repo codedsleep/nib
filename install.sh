@@ -1,22 +1,43 @@
 #!/usr/bin/env bash
-# Private-repository installer. gh handles authentication; no curl fallback.
+# nib installer — downloads a prebuilt nib and installs it for this user.
+#
+#   curl -fsSL https://raw.githubusercontent.com/codedsleep/nib/master/install.sh | bash
+#
+# Options (pass after `-s --` when piping: `... | bash -s -- --version v0.2.1`):
+#   --prefix DIR     install under DIR instead of ~/.local
+#   --version TAG    install a specific release (default: the latest)
+#   -y               never prompt
+#   --uninstall      remove an installed nib (config, sessions and notes stay)
+#   -h, --help       print this and exit
+#
+# Installs the binary, a launcher, the icon, the man page, nib's style schemes
+# and its Markdown language. The binary links against the system's GTK 4
+# (4.14 or later) and GtkSourceView 5 (5.10 or later).
 set -euo pipefail
-repo=codedsleep/markdown-trekfm-rust
+repo=codedsleep/nib
+# NIB_INSTALL_BASE_URL replaces the release download URL (used by scripts/test-install.sh).
+base_url=${NIB_INSTALL_BASE_URL:-}
 prefix=$HOME/.local version="" yes=0 uninstall=0
 while (($#)); do
     case $1 in
         --prefix) prefix=${2:?--prefix needs a directory}; shift 2 ;;
         --version) version=${2:?--version needs a tag}; shift 2 ;;
         --uninstall) uninstall=1; shift ;;
-        -y) yes=1; shift ;;
+        -y|--yes) yes=1; shift ;;
         -h|--help) echo 'Usage: install.sh [-y] [--prefix DIR] [--version vX.Y.Z] [--uninstall]'; exit 0 ;;
         *) echo "install: unknown option $1" >&2; exit 2 ;;
     esac
 done
 [[ $prefix == /* && $prefix != / ]] || { echo 'install: --prefix must be an absolute directory other than /' >&2; exit 2; }
 if ((!yes)); then
-    [[ -t 0 ]] || { echo 'install: use -y when running without a terminal' >&2; exit 2; }
-    read -r -p "Install/uninstall nib in $prefix? [y/N] " answer
+    # Ask on the terminal, not stdin: when piped from curl, stdin is this script.
+    if ! { exec 3<>/dev/tty; } 2>/dev/null; then
+        echo 'install: use -y when running without a terminal' >&2; exit 2
+    fi
+    action=Install; ((uninstall)) && action=Uninstall
+    printf '%s nib in %s? [y/N] ' "$action" "$prefix" >&3
+    read -r answer <&3 || answer=""
+    exec 3<&-
     [[ $answer == y || $answer == Y ]] || exit 1
 fi
 if ((uninstall)); then
@@ -43,31 +64,37 @@ if ((uninstall)); then
     echo "nib: uninstalled from $prefix (config and state kept)"
     exit 0
 fi
-[[ $(uname -s) == Linux && $(uname -m) == x86_64 ]] || { echo 'install: this release supports Linux x86_64; build from source on other architectures' >&2; exit 1; }
-if ! command -v gh >/dev/null || ! gh auth status >/dev/null 2>&1; then
-    echo 'install: install gh, then run gh auth login with access to the private repository' >&2; exit 1
-fi
+[[ $(uname -s) == Linux && $(uname -m) == x86_64 ]] || { echo 'install: releases are built for Linux x86_64; build from source on other architectures' >&2; exit 1; }
+command -v curl >/dev/null || { echo 'install: curl is required' >&2; exit 1; }
 if ! ldconfig -p 2>/dev/null | grep 'libgtksourceview-5.so.0' >/dev/null; then
-    echo 'install: GtkSourceView 5 runtime missing; run: sudo dnf install gtksourceview5 gtk4' >&2
+    echo 'install: GtkSourceView 5 is missing; install it first (Fedora: sudo dnf install gtk4 gtksourceview5)' >&2
     exit 1
 fi
 if [[ -n $version && ! $version =~ ^v[0-9]+\.[0-9]+\.[0-9]+([.-][a-zA-Z0-9.-]+)?$ ]]; then
-    echo 'install: --version must be a release tag such as v0.1.0' >&2; exit 2
+    echo 'install: --version must be a release tag such as v0.2.1' >&2; exit 2
+fi
+if [[ -z $base_url ]]; then
+    if [[ -n $version ]]; then
+        base_url=https://github.com/$repo/releases/download/$version
+    else
+        base_url=https://github.com/$repo/releases/latest/download
+    fi
 fi
 tmp=$(mktemp -d)
 trap 'rm -rf -- "$tmp"' EXIT
-args=(--repo "$repo" --dir "$tmp" --pattern 'nib-*-x86_64-linux.tar.gz' --pattern SHA256SUMS)
-[[ -z $version ]] || args=("$version" "${args[@]}")
-gh release download "${args[@]}"
-shopt -s nullglob
-archives=("$tmp"/nib-*-x86_64-linux.tar.gz)
-((${#archives[@]} == 1)) || { echo 'install: expected exactly one archive' >&2; exit 1; }
-archive=${archives[0]##*/}
-# Verify only our selected architecture; do not require other release assets.
+curl -fsSL --proto '=https,file' -o "$tmp/SHA256SUMS" "$base_url/SHA256SUMS" \
+    || { echo "install: could not download SHA256SUMS from $base_url" >&2; exit 1; }
+# The checksum list names the archive, so the latest release needs no API call.
+mapfile -t names < <(awk '{name = $2; sub(/^\*/, "", name); if (name ~ /^nib-[^\/]*-x86_64-linux\.tar\.gz$/) print name}' "$tmp/SHA256SUMS")
+((${#names[@]} == 1)) || { echo 'install: expected exactly one x86_64 archive in SHA256SUMS' >&2; exit 1; }
+archive=${names[0]}
 checksum=$(awk -v file="$archive" '$2 == file || $2 == "*" file {print $1}' "$tmp/SHA256SUMS")
 [[ $checksum =~ ^[a-fA-F0-9]{64}$ ]] || { echo 'install: missing or ambiguous archive checksum' >&2; exit 1; }
+curl -fsSL --proto '=https,file' -o "$tmp/$archive" "$base_url/$archive" \
+    || { echo "install: could not download $archive" >&2; exit 1; }
 (cd "$tmp"; printf '%s  %s\n' "$checksum" "$archive" | sha256sum --check --strict -)
 mkdir "$tmp/payload"
-tar -xzf "${archives[0]}" -C "$tmp/payload" --no-same-owner --no-same-permissions
+tar -xzf "$tmp/$archive" -C "$tmp/payload" --no-same-owner --no-same-permissions
 bash "$tmp/payload/install-files.sh" -y --prefix "$prefix" --payload "$tmp/payload"
 "$prefix/bin/nib" --version
+case ":$PATH:" in *":$prefix/bin:"*) ;; *) echo "nib: add $prefix/bin to PATH" ;; esac
