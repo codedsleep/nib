@@ -2,6 +2,8 @@
 
 **Elevator pitch:** A keyboard-first Markdown notes app for Linux, in Rust, GTK 4 and GtkSourceView 5 — open an Obsidian vault as it is, write with vim motions, follow `[[wikilinks]]`, and find any note without leaving the keyboard.
 
+![nib: the files column, a note's Markdown source with highlighted Rust, and the same note in the reading view beside it](assets/nib-split.png)
+
 ## Features
 
 - **Your Obsidian vault, unchanged.** Plain Markdown, shortest-unique wikilinks, frontmatter titles, aliases and tags, and the daily, templates and attachments folders you already have. Settings and sessions live outside the vault; `.obsidian/` is left alone.
